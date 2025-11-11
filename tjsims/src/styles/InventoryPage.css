@@ -111,6 +111,7 @@
   display: flex;
   gap: 15px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .search-box {
@@ -168,6 +169,44 @@
   background-color: white;
   cursor: pointer;
   min-width: 180px;
+}
+
+.action-buttons-section {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.return-to-supplier-btn {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.return-to-supplier-btn:hover {
+  background-color: #c82333;
+}
+
+.stock-in-btn-header {
+  background-color: #f1ce44;
+  color: #333;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.stock-in-btn-header:hover {
+  background-color: #e6c13d;
 }
 
 .add-product-btn {

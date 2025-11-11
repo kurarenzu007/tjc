@@ -125,5 +125,44 @@ export const InventoryController = {
         message: error.message || 'Failed to process bulk stock in'
       });
     }
+  },
+
+  // Return to supplier for multiple products
+  returnToSupplier: async (req, res) => {
+    try {
+      const { supplier, returnedBy, returnDate, products } = req.body;
+
+      if (!products || products.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'No products provided'
+        });
+      }
+
+      if (!supplier || !returnedBy) {
+        return res.status(400).json({
+          success: false,
+          message: 'Supplier and returnedBy are required'
+        });
+      }
+
+      await Inventory.returnToSupplier({
+        supplier,
+        returnedBy,
+        returnDate,
+        products
+      });
+
+      res.json({
+        success: true,
+        message: `Successfully returned ${products.length} product(s) to supplier`
+      });
+    } catch (error) {
+      console.error('Return to supplier error:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to process return to supplier'
+      });
+    }
   }
 };

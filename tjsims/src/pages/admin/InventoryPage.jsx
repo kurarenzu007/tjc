@@ -4,6 +4,7 @@ import { BsSearch, BsPlus, BsPencil, BsBox, BsTags, BsTruck } from 'react-icons/
 import '../../styles/InventoryPage.css';
 import { productAPI } from '../../utils/api';
 import { inventoryAPI } from '../../utils/inventoryApi';
+import { serialNumberAPI } from '../../utils/serialNumberApi';
 
 const InventoryPage = () => {
   function getDefaultReceivedBy() {
@@ -39,14 +40,22 @@ const InventoryPage = () => {
     receivedDate: getDefaultDateTime(),
     products: []
   }));
+  const [isReturnToSupplierOpen, setIsReturnToSupplierOpen] = useState(false);
+  const [returnToSupplierData, setReturnToSupplierData] = useState(() => ({
+    supplier: '',
+    returnedBy: getDefaultReceivedBy(),
+    returnDate: getDefaultDateTime(),
+    products: []
+  }));
   const [stockInModal, setStockInModal] = useState({ open: false, product: null });
   const [stockInForm, setStockInForm] = useState(() => ({
     supplier: '',
     receivedBy: getDefaultReceivedBy(),
-    serialNumber: '',
+    serialNumbers: [''], // Array of serial numbers
     receivedDate: getDefaultDateTime(),
     quantity: 1
   }));
+  const [availableSerials, setAvailableSerials] = useState({}); // Store available serials per product
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
 
@@ -172,12 +181,26 @@ const InventoryPage = () => {
   const handleAddProductRow = () => {
     setBulkStockInData(prev => ({
       ...prev,
-      products: [...prev.products, { productId: '', productName: '', brand: '', quantity: 1 }]
+      products: [...prev.products, { productId: '', productName: '', brand: '', serialNumbers: [''], quantity: 1 }]
+    }));
+  };
+
+  const handleAddReturnProductRow = () => {
+    setReturnToSupplierData(prev => ({
+      ...prev,
+      products: [...prev.products, { productId: '', productName: '', brand: '', serialNumber: '', quantity: 1 }]
     }));
   };
 
   const handleRemoveProductRow = (index) => {
     setBulkStockInData(prev => ({
+      ...prev,
+      products: prev.products.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleRemoveReturnProductRow = (index) => {
+    setReturnToSupplierData(prev => ({
       ...prev,
       products: prev.products.filter((_, i) => i !== index)
     }));
@@ -197,8 +220,47 @@ const InventoryPage = () => {
         }
       }
 
+      // Adjust serialNumbers array when quantity changes
+      if (field === 'quantity') {
+        const qty = parseInt(value) || 1;
+        const currentSerials = newProducts[index].serialNumbers || [];
+        newProducts[index].serialNumbers = Array(qty).fill('').map((_, i) => currentSerials[i] || '');
+      }
+
       return { ...prev, products: newProducts };
     });
+  };
+
+  const handleReturnProductRowChange = async (index, field, value) => {
+    setReturnToSupplierData(prev => {
+      const newProducts = [...prev.products];
+      newProducts[index] = { ...newProducts[index], [field]: value };
+
+      // Auto-fill brand when product is selected
+      if (field === 'productId') {
+        const selectedProduct = products.find(p => p.product_id === value);
+        if (selectedProduct) {
+          newProducts[index].productName = selectedProduct.name;
+          newProducts[index].brand = selectedProduct.brand;
+          newProducts[index].serialNumber = ''; // Reset serial number
+        }
+      }
+
+      return { ...prev, products: newProducts };
+    });
+
+    // Fetch available serial numbers when product is selected
+    if (field === 'productId' && value) {
+      try {
+        const response = await serialNumberAPI.getAvailableSerials(value);
+        setAvailableSerials(prev => ({
+          ...prev,
+          [value]: response.data || []
+        }));
+      } catch (error) {
+        console.error('Error fetching serial numbers:', error);
+      }
+    }
   };
 
   const handleOpenStockInModal = (product) => {
@@ -206,7 +268,7 @@ const InventoryPage = () => {
     setStockInForm({
       supplier: '',
       receivedBy: getDefaultReceivedBy(),
-      serialNumber: '',
+      serialNumbers: [''],
       receivedDate: getDefaultDateTime(),
       quantity: 1
     });
@@ -217,7 +279,7 @@ const InventoryPage = () => {
     setStockInForm({
       supplier: '',
       receivedBy: getDefaultReceivedBy(),
-      serialNumber: '',
+      serialNumbers: [''],
       receivedDate: getDefaultDateTime(),
       quantity: 1
     });
@@ -236,28 +298,50 @@ const InventoryPage = () => {
     try {
       setIsSubmitting(true);
 
-      const notesSegments = [
-        `Supplier: ${stockInForm.supplier || 'N/A'}`,
-        `Received by: ${stockInForm.receivedBy || 'N/A'}`
-      ];
-      if (stockInForm.serialNumber) {
-        notesSegments.push(`Serial: ${stockInForm.serialNumber}`);
+      // Prepare serial numbers
+      const validSerials = stockInForm.serialNumbers.filter(s => s.trim() !== '');
+      
+      // Create serial number records FIRST (before adding stock)
+      if (validSerials.length > 0) {
+        const serialsToCreate = validSerials.map(sn => ({
+          serialNumber: sn,
+          productId: stockInModal.product.product_id,
+          notes: `Stock In - ${stockInForm.supplier}`
+        }));
+        
+        // This will throw error if duplicates exist - preventing stock from being added
+        await serialNumberAPI.createSerials(serialsToCreate);
       }
 
-      await inventoryAPI.updateStock(stockInModal.product.product_id, {
-        quantityToAdd,
-        notes: `Stock In Entry - ${notesSegments.join(' | ')}`,
-        createdBy: stockInForm.receivedBy || 'System',
-        transactionDate: stockInForm.receivedDate
-      });
+      // Only add stock if serial numbers were created successfully (or none provided)
+      const payload = {
+        supplier: stockInForm.supplier,
+        receivedBy: stockInForm.receivedBy,
+        receivedDate: stockInForm.receivedDate,
+        products: [{
+          productId: stockInModal.product.product_id,
+          quantity: quantityToAdd,
+          serialNumber: validSerials[0] || null
+        }]
+      };
+
+      await inventoryAPI.bulkStockIn(payload);
 
       alert('Stock in recorded successfully.');
       await loadProducts();
       await loadInventoryStats();
       handleCloseStockInModal();
+      setTimeout(() => window.location.reload(), 500);
     } catch (error) {
       console.error('Error recording stock in:', error);
-      alert(error.message || 'Failed to record stock in.');
+
+      // Make error messages more user-friendly
+      let errorMessage = error.message;
+      if (error.message.includes('already exist')) {
+        errorMessage = `Serial number validation failed. Please use unique serial numbers that haven't been used for this product before.`;
+      }
+
+      alert(errorMessage || 'Failed to record stock in.');
     } finally {
       setIsSubmitting(false);
     }
@@ -275,12 +359,35 @@ const InventoryPage = () => {
     try {
       setIsSubmitting(true);
 
+      // Collect all serial numbers FIRST
+      const allSerials = [];
+      for (const product of bulkStockInData.products) {
+        const validSerials = (product.serialNumbers || []).filter(s => s.trim() !== '');
+        if (validSerials.length > 0) {
+          validSerials.forEach(sn => {
+            allSerials.push({
+              serialNumber: sn,
+              productId: product.productId,
+              notes: `Bulk Stock In - ${bulkStockInData.supplier}`
+            });
+          });
+        }
+      }
+
+      // Create serial numbers FIRST (before adding stock)
+      // This will throw error if duplicates exist - preventing stock from being added
+      if (allSerials.length > 0) {
+        await serialNumberAPI.createSerials(allSerials);
+      }
+
+      // Only add stock if serial numbers were created successfully (or none provided)
       const payload = {
         supplier: bulkStockInData.supplier,
         receivedBy: bulkStockInData.receivedBy,
         receivedDate: bulkStockInData.receivedDate,
         products: bulkStockInData.products.map(p => ({
           productId: p.productId,
+          serialNumber: p.serialNumbers?.[0] || null,
           quantity: parseInt(p.quantity) || 0
         }))
       };
@@ -292,11 +399,70 @@ const InventoryPage = () => {
         await loadProducts();
         await loadInventoryStats();
         setIsBulkStockInOpen(false);
+        // Refresh the page to show updated data
+        setTimeout(() => window.location.reload(), 500);
       }
     } catch (error) {
       console.error('Error in bulk stock in:', error);
-      alert(error.message || 'Failed to record bulk stock in.');
-      alert('Error: ' + error.message);
+
+      // Make error messages more user-friendly
+      let errorMessage = error.message;
+      if (error.message.includes('already exist')) {
+        errorMessage = ``;
+      }
+
+      alert(errorMessage || 'Failed to record bulk stock in.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleOpenReturnToSupplier = () => {
+    setReturnToSupplierData({
+      supplier: '',
+      returnedBy: getDefaultReceivedBy(),
+      returnDate: getDefaultDateTime(),
+      products: []
+    });
+    setIsReturnToSupplierOpen(true);
+  };
+
+  const handleReturnToSupplierSubmit = async (e) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+
+    if (returnToSupplierData.products.length === 0) {
+      alert('Please add at least one product');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      const payload = {
+        supplier: returnToSupplierData.supplier,
+        returnedBy: returnToSupplierData.returnedBy,
+        returnDate: returnToSupplierData.returnDate,
+        products: returnToSupplierData.products.map(p => ({
+          productId: p.productId,
+          serialNumber: p.serialNumber,
+          quantity: parseInt(p.quantity) || 0
+        }))
+      };
+
+      const response = await inventoryAPI.returnToSupplier(payload);
+
+      if (response.success) {
+        alert('Return to supplier completed successfully.');
+        await loadProducts();
+        await loadInventoryStats();
+        setIsReturnToSupplierOpen(false);
+        // Refresh the page to show updated data
+        setTimeout(() => window.location.reload(), 500);
+      }
+    } catch (error) {
+      console.error('Error in return to supplier:', error);
+      alert(error.message || 'Failed to process return to supplier.');
     } finally {
       setIsSubmitting(false);
     }
@@ -328,10 +494,13 @@ const InventoryPage = () => {
       const response = await inventoryAPI.updateStock(selectedProduct.product_id, payload);
 
       if (response.success) {
+        alert('Product edited successfully.');
         await loadProducts();
         await loadInventoryStats();
+        setIsModalOpen(false);
+        // Refresh the page to show updated data
+        setTimeout(() => window.location.reload(), 500);
       }
-      setIsModalOpen(false);
     } catch (error) {
       console.error('Error updating reorder point:', error);
       alert('Error updating reorder point: ' + error.message);
@@ -403,6 +572,21 @@ const InventoryPage = () => {
                   <option value="Out of Stock">Out of Stock</option>
                 </select>
               </div>
+
+              <div className="action-buttons-section">
+                <button 
+                  onClick={handleOpenReturnToSupplier}
+                  className="return-to-supplier-btn"
+                >
+                  Return to Supplier
+                </button>
+                <button 
+                  onClick={handleOpenBulkStockIn}
+                  className="stock-in-btn-header"
+                >
+                  + Stock In
+                </button>
+              </div>
             </div>
           </div>
 
@@ -435,29 +619,6 @@ const InventoryPage = () => {
                 <p className="stat-number out-of-stock">{inventoryStats.outOfStock}</p>
               </div>
             </div>
-          </div>
-
-          {/* Stock In Button */}
-          <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'flex-start' }}>
-            <button 
-              onClick={handleOpenBulkStockIn}
-              className="stock-in-btn-header"
-              style={{ 
-                backgroundColor: '#28a745', 
-                color: 'white', 
-                border: 'none', 
-                padding: '10px 20px', 
-                borderRadius: '6px', 
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-            >
-              <BsBox /> Stock In
-            </button>
           </div>
 
           {/* Products Table */}
@@ -617,7 +778,7 @@ const InventoryPage = () => {
                 </div>
 
                 <div style={{ marginTop: '24px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h3 style={{ fontSize: '16px', fontWeight: '600' }}>Products</h3>
+                  <h3 style={{ fontSize: '16px', fontWeight: '600' }}>Product List</h3>
                   <button
                     type="button"
                     onClick={handleAddProductRow}
@@ -631,7 +792,7 @@ const InventoryPage = () => {
                       fontSize: '14px'
                     }}
                   >
-                    + Add Row
+                    + Add Product
                   </button>
                 </div>
 
@@ -641,14 +802,15 @@ const InventoryPage = () => {
                       <th style={{ padding: '12px', textAlign: 'left', fontSize: '14px' }}>Product Name</th>
                       <th style={{ padding: '12px', textAlign: 'left', fontSize: '14px' }}>Brand</th>
                       <th style={{ padding: '12px', textAlign: 'left', fontSize: '14px', width: '100px' }}>Quantity</th>
+                      <th style={{ padding: '12px', textAlign: 'left', fontSize: '14px', width: '250px' }}>Serial Numbers</th>
                       <th style={{ padding: '12px', textAlign: 'center', fontSize: '14px', width: '80px' }}>Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {bulkStockInData.products.length === 0 ? (
                       <tr>
-                        <td colSpan="4" style={{ padding: '20px', textAlign: 'center', color: '#6c757d' }}>
-                          No products added. Click "+ Add Row" to add products.
+                        <td colSpan="5" style={{ padding: '20px', textAlign: 'center', color: '#6c757d' }}>
+                          No products added. Click "+ Add Product" to add products.
                         </td>
                       </tr>
                     ) : (
@@ -685,6 +847,24 @@ const InventoryPage = () => {
                               required
                             />
                           </td>
+                          <td style={{ padding: '8px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              {Array.from({ length: row.quantity || 1 }, (_, serialIndex) => (
+                                <input
+                                  key={serialIndex}
+                                  type="text"
+                                  value={row.serialNumbers?.[serialIndex] || ''}
+                                  onChange={(e) => {
+                                    const newSerials = [...(row.serialNumbers || [])];
+                                    newSerials[serialIndex] = e.target.value;
+                                    handleProductRowChange(index, 'serialNumbers', newSerials);
+                                  }}
+                                  placeholder={`Serial #${serialIndex + 1} (optional)`}
+                                  style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #ced4da', fontSize: '13px' }}
+                                />
+                              ))}
+                            </div>
+                          </td>
                           <td style={{ padding: '8px', textAlign: 'center' }}>
                             <button
                               type="button"
@@ -699,7 +879,7 @@ const InventoryPage = () => {
                                 fontSize: '13px'
                               }}
                             >
-                              Remove
+                              x
                             </button>
                           </td>
                         </tr>
@@ -711,6 +891,175 @@ const InventoryPage = () => {
 
               <div className="modal-actions">
                 <button type="button" onClick={() => setIsBulkStockInOpen(false)} className="cancel-btn">
+                  Cancel
+                </button>
+                <button type="submit" className="confirm-btn" disabled={isSubmitting}>
+                  {isSubmitting ? 'Processing...' : 'Confirm'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Return to Supplier Modal */}
+      {isReturnToSupplierOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '800px', width: '90%' }}>
+            <div className="modal-header">
+              <h2>Return to Supplier</h2>
+              <button onClick={() => setIsReturnToSupplierOpen(false)} className="close-btn">×</button>
+            </div>
+
+            <form onSubmit={handleReturnToSupplierSubmit} className="product-form">
+              <div className="form-section">
+                <div className="form-group">
+                  <label>Supplier/Source</label>
+                  <input
+                    type="text"
+                    value={returnToSupplierData.supplier}
+                    onChange={(e) => setReturnToSupplierData(prev => ({ ...prev, supplier: e.target.value }))}
+                    className="form-input"
+                    placeholder="Enter supplier name"
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Returned By</label>
+                  <input
+                    type="text"
+                    value={returnToSupplierData.returnedBy}
+                    onChange={(e) => setReturnToSupplierData(prev => ({ ...prev, returnedBy: e.target.value }))}
+                    className="form-input"
+                    placeholder="Enter your name"
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Date</label>
+                  <input
+                    type="datetime-local"
+                    value={returnToSupplierData.returnDate}
+                    onChange={(e) => setReturnToSupplierData(prev => ({ ...prev, returnDate: e.target.value }))}
+                    className="form-input"
+                    required
+                  />
+                </div>
+
+                <div style={{ marginTop: '24px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: '600' }}>Product List</h3>
+                  <button
+                    type="button"
+                    onClick={handleAddReturnProductRow}
+                    style={{
+                      backgroundColor: '#007bff',
+                      color: 'white',
+                      border: 'none',
+                      padding: '8px 16px',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    + Add Row
+                  </button>
+                </div>
+
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '16px' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#f8f9fa', borderBottom: '2px solid #dee2e6' }}>
+                      <th style={{ padding: '12px', textAlign: 'left', fontSize: '14px' }}>Product Name</th>
+                      <th style={{ padding: '12px', textAlign: 'left', fontSize: '14px' }}>Brand</th>
+                      <th style={{ padding: '12px', textAlign: 'left', fontSize: '14px', width: '150px' }}>Serial Number</th>
+                      <th style={{ padding: '12px', textAlign: 'left', fontSize: '14px', width: '100px' }}>Quantity</th>
+                      <th style={{ padding: '12px', textAlign: 'center', fontSize: '14px', width: '80px' }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {returnToSupplierData.products.length === 0 ? (
+                      <tr>
+                        <td colSpan="5" style={{ padding: '20px', textAlign: 'center', color: '#6c757d' }}>
+                          No products added. Click "+ Add Row" to add products.
+                        </td>
+                      </tr>
+                    ) : (
+                      returnToSupplierData.products.map((row, index) => (
+                        <tr key={index} style={{ borderBottom: '1px solid #dee2e6' }}>
+                          <td style={{ padding: '8px' }}>
+                            <select
+                              value={row.productId}
+                              onChange={(e) => handleReturnProductRowChange(index, 'productId', e.target.value)}
+                              style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ced4da' }}
+                              required
+                            >
+                              <option value="">Select Product</option>
+                              {products.map(p => (
+                                <option key={p.product_id} value={p.product_id}>{p.name}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td style={{ padding: '8px' }}>
+                            <input
+                              type="text"
+                              value={row.brand}
+                              readOnly
+                              style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ced4da', backgroundColor: '#e9ecef' }}
+                            />
+                          </td>
+                          <td style={{ padding: '8px' }}>
+                            <select
+                              value={row.serialNumber}
+                              onChange={(e) => handleReturnProductRowChange(index, 'serialNumber', e.target.value)}
+                              style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ced4da' }}
+                              required
+                              disabled={!row.productId}
+                            >
+                              <option value="">Select Serial Number</option>
+                              {row.productId && availableSerials[row.productId]?.map(serial => (
+                                <option key={serial.serial_number} value={serial.serial_number}>
+                                  {serial.serial_number}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                          <td style={{ padding: '8px' }}>
+                            <input
+                              type="number"
+                              value={row.quantity}
+                              onChange={(e) => handleReturnProductRowChange(index, 'quantity', e.target.value)}
+                              min="1"
+                              style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ced4da' }}
+                              required
+                            />
+                          </td>
+                          <td style={{ padding: '8px', textAlign: 'center' }}>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveReturnProductRow(index)}
+                              style={{
+                                backgroundColor: '#dc3545',
+                                color: 'white',
+                                border: 'none',
+                                padding: '6px 12px',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '13px'
+                              }}
+                            >
+                              x
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" onClick={() => setIsReturnToSupplierOpen(false)} className="cancel-btn">
                   Cancel
                 </button>
                 <button type="submit" className="confirm-btn" disabled={isSubmitting}>
@@ -758,17 +1107,6 @@ const InventoryPage = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Serial Number</label>
-                  <input
-                    type="text"
-                    value={stockInForm.serialNumber}
-                    onChange={(e) => setStockInForm(prev => ({ ...prev, serialNumber: e.target.value }))}
-                    className="form-input"
-                    placeholder="Enter serial number (optional)"
-                  />
-                </div>
-
-                <div className="form-group">
                   <label>Date and Time Received</label>
                   <input
                     type="datetime-local"
@@ -785,10 +1123,40 @@ const InventoryPage = () => {
                     type="number"
                     min="1"
                     value={stockInForm.quantity}
-                    onChange={(e) => setStockInForm(prev => ({ ...prev, quantity: e.target.value }))}
+                    onChange={(e) => {
+                      const qty = parseInt(e.target.value) || 1;
+                      setStockInForm(prev => ({
+                        ...prev,
+                        quantity: qty,
+                        serialNumbers: Array(qty).fill('').map((_, i) => prev.serialNumbers[i] || '')
+                      }));
+                    }}
                     className="form-input"
                     required
                   />
+                </div>
+
+                <div className="form-group">
+                  <label>Serial Numbers (1 per product)</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {Array.from({ length: parseInt(stockInForm.quantity) || 1 }, (_, index) => (
+                      <input
+                        key={`serial-${index}`}
+                        type="text"
+                        value={(stockInForm.serialNumbers && stockInForm.serialNumbers[index]) || ''}
+                        onChange={(e) => {
+                          const newSerials = Array.from({ length: parseInt(stockInForm.quantity) || 1 }, (_, i) => 
+                            (stockInForm.serialNumbers && stockInForm.serialNumbers[i]) || ''
+                          );
+                          newSerials[index] = e.target.value;
+                          setStockInForm(prev => ({ ...prev, serialNumbers: newSerials }));
+                        }}
+                        className="form-input"
+                        placeholder={`Serial Number ${index + 1} (optional)`}
+                        style={{ marginBottom: '4px' }}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
 

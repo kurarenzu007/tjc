@@ -3,6 +3,7 @@ import { BsCartPlus, BsTrash, BsSearch } from 'react-icons/bs';
 import Navbar from '../../components/admin/Navbar';
 import '../../styles/SalesPage.css';
 import { productAPI, salesAPI, inventoryAPI } from '../../utils/api';
+import { serialNumberAPI } from '../../utils/serialNumberApi';
 import { generateSaleReceipt } from '../../utils/pdfGenerator';
 
 const SalesPage = () => {
@@ -10,6 +11,8 @@ const SalesPage = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState([]);
+  const [customerType, setCustomerType] = useState('new'); // 'new' or 'existing'
+  const [saveCustomerInfo, setSaveCustomerInfo] = useState(false);
   const [lastName, setLastName] = useState('');
   const [firstName, setFirstName] = useState('');
   const [middleName, setMiddleName] = useState('');
@@ -41,6 +44,12 @@ const SalesPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Serial number selection state
+  const [serialModalOpen, setSerialModalOpen] = useState(false);
+  const [selectedProductForSerial, setSelectedProductForSerial] = useState(null);
+  const [availableSerials, setAvailableSerials] = useState([]);
+  const [selectedSerials, setSelectedSerials] = useState({});
 
   // Fetch products and inventory data on component mount
   useEffect(() => {
@@ -106,14 +115,66 @@ const SalesPage = () => {
   );
 
   const handleQuantityChange = (productId, change) => {
+    const product = products.find(p => p.product_id === productId);
+    if (!product) return;
+
+    const currentQty = quantities[productId] || 1;
+    const newQty = currentQty + change;
+
+    // Enforce minimum of 1
+    if (newQty < 1) return;
+
+    // Enforce maximum of available stock
+    if (newQty > product.stock) {
+      alert(`Cannot exceed available stock (${product.stock} units available)`);
+      return;
+    }
+
+    // Handle serial numbers when decreasing quantity
+    if (change < 0 && product.requires_serial) {
+      const currentSerials = selectedSerials[productId] || [];
+      if (currentSerials.length > newQty) {
+        // Auto-remove excess serials from the end
+        const removedSerials = currentSerials.slice(newQty);
+        setSelectedSerials({
+          ...selectedSerials,
+          [productId]: currentSerials.slice(0, newQty)
+        });
+        if (removedSerials.length > 0) {
+          alert(`Removed ${removedSerials.length} serial number(s): ${removedSerials.join(', ')}`);
+        }
+      }
+    }
+
+    // Handle serial numbers when increasing quantity
+    if (change > 0 && product.requires_serial) {
+      const currentSerials = selectedSerials[productId] || [];
+      if (currentSerials.length < newQty) {
+        alert(`Please select ${newQty - currentSerials.length} more serial number(s) after increasing quantity`);
+      }
+    }
+
     setQuantities(prev => ({
       ...prev,
-      [productId]: Math.max(1, (prev[productId] || 1) + change)
+      [productId]: newQty
     }));
   };
 
   const addToCart = async (product) => {
     const quantity = quantities[product.product_id] || 1;
+    const productSerials = selectedSerials[product.product_id] || [];
+
+    // Check if product requires serial numbers
+    if (product.requires_serial && productSerials.length === 0) {
+      alert('Please select serial numbers for this product before adding to cart');
+      return;
+    }
+
+    // Check if serial count matches quantity for products requiring serials
+    if (product.requires_serial && productSerials.length !== quantity) {
+      alert(`Please select ${quantity} serial number(s) for this product`);
+      return;
+    }
 
     // Check if we have enough stock
     if (product.stock < quantity) {
@@ -128,20 +189,36 @@ const SalesPage = () => {
       const existingItem = cart.find(item => item.product_id === product.product_id);
 
       if (existingItem) {
+        // Add to existing cart item
+        const newSerials = [...(existingItem.serialNumbers || []), ...productSerials];
         setCart(cart.map(item =>
           item.product_id === product.product_id
-            ? { ...item, quantity: item.quantity + quantity }
+            ? { ...item, quantity: item.quantity + quantity, serialNumbers: newSerials }
             : item
         ));
       } else {
+        // Add new cart item
         setCart([...cart, {
           product_id: product.product_id,
           name: product.name,
           brand: product.brand,
           price: product.price,
-          quantity
+          quantity,
+          serialNumbers: productSerials
         }]);
       }
+
+      // Clear selected serials for this product
+      setSelectedSerials(prev => ({
+        ...prev,
+        [product.product_id]: []
+      }));
+
+      // Reset quantity
+      setQuantities(prev => ({
+        ...prev,
+        [product.product_id]: 1
+      }));
 
       // Update local state to reflect stock change
       setProducts(products.map(p =>
@@ -207,6 +284,16 @@ const SalesPage = () => {
 
     // If quantity is not changing, return early
     if (quantityDifference === 0) return;
+
+    // Check if product requires serial numbers
+    const product = products.find(p => p.product_id === productId);
+    const hasSerials = item.serialNumbers && item.serialNumbers.length > 0;
+
+    // Prevent changing quantity if item has serial numbers
+    if (hasSerials && product?.requires_serial) {
+      alert(`Cannot change quantity for items with serial numbers. Please remove the item and add it again with the correct quantity and serials.`);
+      return;
+    }
 
     try {
       // Check stock availability for increases
@@ -379,6 +466,92 @@ const SalesPage = () => {
     setPaymentOption('');
   };
 
+  const handleOpenSerialModal = async (product) => {
+    setSelectedProductForSerial(product);
+    setSerialModalOpen(true);
+    
+    try {
+      // Fetch available serial numbers from backend
+      const response = await serialNumberAPI.getAvailableSerials(product.product_id);
+      const allAvailableSerials = response.data || [];
+      
+      // Get serial numbers already in the cart for this product
+      const cartItem = cart.find(item => item.product_id === product.product_id);
+      const serialsInCart = cartItem?.serialNumbers || [];
+      
+      // Filter out serials that are already in the cart
+      const filteredSerials = allAvailableSerials.filter(
+        serial => !serialsInCart.includes(serial.serial_number)
+      );
+      
+      setAvailableSerials(filteredSerials);
+      
+      if (filteredSerials.length === 0 && serialsInCart.length > 0) {
+        alert(`All available serial numbers for ${product.name} are already in your cart.`);
+      }
+    } catch (error) {
+      console.error('Error fetching serial numbers:', error);
+      setAvailableSerials([]);
+      alert('Failed to load serial numbers. Please try again.');
+    }
+  };
+
+  const handleCloseSerialModal = () => {
+    setSerialModalOpen(false);
+    setSelectedProductForSerial(null);
+    setAvailableSerials([]);
+  };
+
+  const handleSerialSelection = (serialNumber) => {
+    if (!selectedProductForSerial) return;
+    
+    const productId = selectedProductForSerial.product_id;
+    const currentSerials = selectedSerials[productId] || [];
+    const requiredQty = quantities[productId] || 1;
+    
+    if (currentSerials.includes(serialNumber)) {
+      // Remove serial if already selected
+      setSelectedSerials({
+        ...selectedSerials,
+        [productId]: currentSerials.filter(s => s !== serialNumber)
+      });
+    } else {
+      // Check if we've reached the limit
+      if (currentSerials.length >= requiredQty) {
+        alert(`You can only select ${requiredQty} serial number(s) for this quantity. Please deselect one first or increase the quantity.`);
+        return;
+      }
+      
+      // Add serial if not selected and under limit
+      setSelectedSerials({
+        ...selectedSerials,
+        [productId]: [...currentSerials, serialNumber]
+      });
+    }
+  };
+
+  const handleConfirmSerialSelection = () => {
+    if (!selectedProductForSerial) return;
+    
+    const productId = selectedProductForSerial.product_id;
+    const selectedCount = (selectedSerials[productId] || []).length;
+    const requiredQty = quantities[productId] || 1;
+    
+    if (selectedCount === 0) {
+      alert('Please select at least one serial number');
+      return;
+    }
+    
+    // Validate that selected count matches required quantity
+    if (selectedCount !== requiredQty) {
+      alert(`Please select exactly ${requiredQty} serial number(s). Currently selected: ${selectedCount}`);
+      return;
+    }
+    
+    handleCloseSerialModal();
+    alert(`${selectedCount} serial number(s) selected for ${selectedProductForSerial.name}`);
+  };
+
   const confirmSale = async () => {
     if (cart.length === 0) {
       alert('Please add items to cart before confirming sale');
@@ -421,12 +594,29 @@ const SalesPage = () => {
           product_name: item.name,
           brand: item.brand,
           price: item.price,
-          quantity: item.quantity
+          quantity: item.quantity,
+          serialNumbers: item.serialNumbers || [] // Include serial numbers
         }))
       };
 
       const result = await salesAPI.createSale(saleData);
       const saleNo = result?.data?.sale_number || 'N/A';
+      const saleId = result?.data?.sale_id;
+
+      // Mark serial numbers as sold if sale was created successfully
+      if (saleId && result.success) {
+        try {
+          // Collect all serial numbers from cart items
+          const allSerialNumbers = cart.flatMap(item => item.serialNumbers || []).filter(sn => sn);
+          
+          if (allSerialNumbers.length > 0) {
+            await serialNumberAPI.markAsSold(allSerialNumbers, saleId);
+          }
+        } catch (serialError) {
+          console.error('Error marking serial numbers as sold:', serialError);
+          // Don't fail the sale, just log the error
+        }
+      }
 
       // Auto-generate and download receipt
       try {
@@ -515,51 +705,89 @@ const SalesPage = () => {
                         <th>Price</th>
                         <th>Stock</th>
                         <th>Quantity</th>
+                        <th>Serial Numbers</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredProducts.map(product => (
-                        <tr key={product.product_id}>
-                          <td>{product.name}</td>
-                          <td>{product.brand}</td>
-                          <td>₱{product.price.toLocaleString()}</td>
-                          <td className={product.stock === 0 ? 'out-of-stock' : ''}>
-                            {product.stock}
-                          </td>
-                          <td>
-                            <div className="quantity-controls">
-                              <button
-                                onClick={() => handleQuantityChange(product.product_id, -1)}
-                                disabled={product.stock === 0 || (quantities[product.product_id] || 1) <= 1}
-                                className="quantity-btn"
-                              >
-                                -
-                              </button>
-                              <span className="quantity-display">
-                                {quantities[product.product_id] || 1}
-                              </span>
-                              <button
-                                onClick={() => handleQuantityChange(product.product_id, 1)}
-                                disabled={product.stock === 0}
-                                className="quantity-btn"
-                              >
-                                +
-                              </button>
-                            </div>
-                          </td>
-                          <td>
-                            <button
-                              onClick={() => addToCart(product)}
-                              disabled={product.stock === 0}
-                              className="add-to-cart-btn"
-                            >
-                              <BsCartPlus className="cart-icon" />
-                              Add to Sale
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                      {filteredProducts.map(product => {
+                        const productSerials = selectedSerials[product.product_id] || [];
+                        const requiredQty = quantities[product.product_id] || 1;
+                        return (
+                          <tr key={product.product_id}>
+                            <td>{product.name}</td>
+                            <td>{product.brand}</td>
+                            <td>₱{product.price.toLocaleString()}</td>
+                            <td className={
+                              product.stock === 0 ? 'out-of-stock' : 
+                              product.stock <= (product.reorder_point || 10) / 2 ? 'low-stock' : 
+                              'good-stock'
+                            }>
+                              {product.stock === 0 ? 'Out of Stock' : product.stock}
+                            </td>
+                            <td>
+                              <div className="quantity-controls">
+                                <button
+                                  onClick={() => handleQuantityChange(product.product_id, -1)}
+                                  disabled={product.stock === 0 || (quantities[product.product_id] || 1) <= 1}
+                                  className="quantity-btn"
+                                >
+                                  -
+                                </button>
+                                <span className="quantity-display">
+                                  {quantities[product.product_id] || 1}
+                                </span>
+                                <button
+                                  onClick={() => handleQuantityChange(product.product_id, 1)}
+                                  disabled={product.stock === 0}
+                                  className="quantity-btn"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </td>
+                            <td>
+                              {product.requires_serial ? (
+                                <div style={{ fontSize: '12px' }}>
+                                  {productSerials.length > 0 ? (
+                                    <div style={{ color: productSerials.length === requiredQty ? '#28a745' : '#ffc107' }}>
+                                      {productSerials.length}/{requiredQty} selected
+                                      <div style={{ fontSize: '11px', color: '#666', marginTop: '2px' }}>
+                                        {productSerials.join(', ')}
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <span style={{ color: '#dc3545' }}>None selected</span>
+                                  )}
+                                </div>
+                              ) : (
+                                <span style={{ color: '#999', fontSize: '12px' }}>N/A</span>
+                              )}
+                            </td>
+                            <td>
+                              <div className="action-buttons-cell">
+                                {product.requires_serial && (
+                                  <button
+                                    onClick={() => handleOpenSerialModal(product)}
+                                    disabled={product.stock === 0}
+                                    className="select-serial-btn"
+                                  >
+                                    Select Serial
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => addToCart(product)}
+                                  disabled={product.stock === 0}
+                                  className="add-to-cart-btn"
+                                >
+                                  <BsCartPlus className="cart-icon" />
+                                  Add to Cart
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 )}
@@ -581,43 +809,56 @@ const SalesPage = () => {
                     </div>
                   ) : (
                     <>
-                      {cart.map(item => (
-                        <div key={item.product_id} className="cart-item">
-                          <div className="cart-item-info">
-                            <h4>{item.name}</h4>
-                            <p>{item.brand}</p>
-                            <p>₱{item.price.toLocaleString()}</p>
-                          </div>
-                          <div className="cart-item-quantity">
-                            <div className="quantity-controls">
-                              <button
-                                onClick={() => updateCartQuantity(item.product_id, -1)}
-                                className="quantity-btn"
-                              >
-                                -
-                              </button>
-                              <span className="quantity-display">
-                                {item.quantity}
-                              </span>
-                              <button
-                                onClick={() => updateCartQuantity(item.product_id, 1)}
-                                className="quantity-btn"
-                              >
-                                +
-                              </button>
+                      {cart.map(item => {
+                        const hasSerials = item.serialNumbers && item.serialNumbers.length > 0;
+                        return (
+                          <div key={item.product_id} className="cart-item">
+                            <div className="cart-item-info">
+                              <h4>{item.name}</h4>
+                              <p>{item.brand}</p>
+                              <p>₱{item.price.toLocaleString()}</p>
+                              {hasSerials && (
+                                <p style={{ fontSize: '11px', color: '#667eea', marginTop: '4px', fontWeight: '600' }}>
+                                  🔒 Serial: {item.serialNumbers.join(', ')}
+                                </p>
+                              )}
                             </div>
+                            <div className="cart-item-quantity">
+                              <div className="quantity-controls">
+                                <button
+                                  onClick={() => updateCartQuantity(item.product_id, -1)}
+                                  className="quantity-btn"
+                                  disabled={hasSerials}
+                                  title={hasSerials ? "Cannot change quantity for items with serial numbers" : "Decrease quantity"}
+                                >
+                                  -
+                                </button>
+                                <span className="quantity-display">
+                                  {item.quantity}
+                                </span>
+                                <button
+                                  onClick={() => updateCartQuantity(item.product_id, 1)}
+                                  className="quantity-btn"
+                                  disabled={hasSerials}
+                                  title={hasSerials ? "Cannot change quantity for items with serial numbers" : "Increase quantity"}
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </div>
+                            <div className="cart-item-total">
+                              ₱{(item.price * item.quantity).toLocaleString()}
+                            </div>
+                            <button
+                              onClick={() => removeFromCart(item.product_id)}
+                              className="remove-btn"
+                              title="Remove from cart"
+                            >
+                              <BsTrash />
+                            </button>
                           </div>
-                          <div className="cart-item-total">
-                            ₱{(item.price * item.quantity).toLocaleString()}
-                          </div>
-                          <button
-                            onClick={() => removeFromCart(item.product_id)}
-                            className="remove-btn"
-                          >
-                            <BsTrash />
-                          </button>
-                        </div>
-                      ))}
+                        );
+                      })}
                       <div className="cart-total">
                         <strong>Total: ₱{getCartTotal().toLocaleString()}</strong>
                       </div>
@@ -629,9 +870,47 @@ const SalesPage = () => {
               {/* Customer Information Section */}
               <div className="customer-section">
                 <h2>Customer Information</h2>
-                <div className="customer-info">
+                
+                {/* Customer Type Selection */}
+                <div className="customer-type-selection">
+                  <label className="customer-type-label">Customer Type</label>
+                  <div className="radio-group">
+                    <label className="radio-option">
+                      <input
+                        type="radio"
+                        name="customerType"
+                        value="new"
+                        checked={customerType === 'new'}
+                        onChange={(e) => {
+                          setCustomerType(e.target.value);
+                          setSelectedCustomerId('');
+                          clearCustomerInfo();
+                        }}
+                      />
+                      <span>New Customer</span>
+                    </label>
+                    <label className="radio-option">
+                      <input
+                        type="radio"
+                        name="customerType"
+                        value="existing"
+                        checked={customerType === 'existing'}
+                        onChange={(e) => {
+                          setCustomerType(e.target.value);
+                          setSaveCustomerInfo(false);
+                        }}
+                      />
+                      <span>Existing Customer</span>
+                    </label>
+                  </div>
+                </div>
+
+                <h3 className="customer-detail-heading">Customer Detail</h3>
+
+                {/* Existing Customer Selection */}
+                {customerType === 'existing' && (
                   <div className="info-row">
-                    <label>Saved Customers:</label>
+                    <label>Select Customer:</label>
                     <select
                       value={selectedCustomerId}
                       onChange={(e) => handleSelectCustomer(e.target.value)}
@@ -648,85 +927,104 @@ const SalesPage = () => {
                       ))}
                     </select>
                   </div>
-                  <div className="customer-actions">
-                    <button type="button" onClick={handleSaveCustomer} className="save-customer-btn">
-                      Save Customer
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleRemoveCustomer}
-                      className="remove-customer-btn"
-                      disabled={!selectedCustomerId}
-                    >
-                      Remove Selected
-                    </button>
-                  </div>
+                )}
+
+                <div className="customer-info">
                   <div className="info-row">
-                    <label>Last Name:</label>
-                    <input
-                      type="text"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Enter last name"
-                      className="info-input"
-                    />
-                  </div>
-                  <div className="info-row">
-                    <label>First Name:</label>
+                    <label>First Name</label>
                     <input
                       type="text"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      placeholder="Enter first name"
+                      placeholder="Enter First Name"
                       className="info-input"
+                      disabled={customerType === 'existing'}
                     />
                   </div>
                   <div className="info-row">
-                    <label>Middle Name:</label>
+                    <label>Middle Name</label>
                     <input
                       type="text"
                       value={middleName}
                       onChange={(e) => setMiddleName(e.target.value)}
-                      placeholder="Enter middle name"
+                      placeholder="Enter Middle Name"
                       className="info-input"
+                      disabled={customerType === 'existing'}
                     />
                   </div>
                   <div className="info-row">
-                    <label>Contact Number:</label>
+                    <label>Last Name</label>
+                    <input
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Enter Last Name"
+                      className="info-input"
+                      disabled={customerType === 'existing'}
+                    />
+                  </div>
+                  <div className="info-row">
+                    <label>Contact Number</label>
                     <input
                       type="text"
                       value={contactNumber}
                       onChange={(e) => setContactNumber(e.target.value)}
-                      placeholder="Enter contact number"
+                      placeholder="Enter Contact Number"
                       className="info-input"
+                      disabled={customerType === 'existing'}
                     />
                   </div>
                   <div className="info-row">
-                    <label>Address Details:</label>
+                    <label>Full Address</label>
                     <input
                       type="text"
                       value={addressDetails}
                       onChange={(e) => setAddressDetails(e.target.value)}
-                      placeholder="Street/Barangay/City details"
+                      placeholder="Street/Barangay/City"
                       className="info-input"
+                      disabled={customerType === 'existing'}
                     />
                   </div>
                   <div className="info-row">
-                    <label>Address:</label>
+                    <label>Location</label>
                     <select
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
                       className="info-input"
+                      disabled={customerType === 'existing'}
                     >
+                      <option value="">Choose Location</option>
                       <option value="Manila">Manila</option>
                       <option value="Pampanga">Pampanga</option>
                       <option value="Bulacan">Bulacan</option>
                     </select>
                   </div>
-                  <div className="info-row">
-                    <button onClick={clearCustomerInfo} className="clear-info-btn">
-                      Clear Information
+
+                  {/* Save Customer Info Checkbox - Only for New Customer */}
+                  {customerType === 'new' && (
+                    <div className="info-row">
+                      <label className="checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={saveCustomerInfo}
+                          onChange={(e) => setSaveCustomerInfo(e.target.checked)}
+                          className="checkbox-input"
+                        />
+                        <span>Save this Customer Information</span>
+                      </label>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="customer-form-actions">
+                    <button onClick={clearCustomerInfo} className="clear-form-btn">
+                      Clear Form
                     </button>
+                    {customerType === 'new' && saveCustomerInfo && (
+                      <button onClick={handleSaveCustomer} className="save-form-btn">
+                        Save
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -825,6 +1123,71 @@ const SalesPage = () => {
             </button>
           </div>
         </div>
+
+        {/* Serial Number Selection Modal */}
+        {serialModalOpen && selectedProductForSerial && (
+          <div className="modal-overlay" onClick={handleCloseSerialModal}>
+            <div className="modal-content serial-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>Select Serial Numbers</h2>
+                <button onClick={handleCloseSerialModal} className="close-btn">×</button>
+              </div>
+              
+              <div className="modal-body">
+                <div className="product-info-header">
+                  <h3>{selectedProductForSerial.name}</h3>
+                  <p className="product-brand">{selectedProductForSerial.brand}</p>
+                  <p className="selected-count" style={{
+                    color: (selectedSerials[selectedProductForSerial.product_id] || []).length === (quantities[selectedProductForSerial.product_id] || 1) ? '#28a745' : '#dc3545'
+                  }}>
+                    Selected: {(selectedSerials[selectedProductForSerial.product_id] || []).length} / {quantities[selectedProductForSerial.product_id] || 1} required
+                  </p>
+                  <p style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                    Available serial numbers: {availableSerials.length}
+                  </p>
+                </div>
+
+                <div className="serial-list">
+                  {availableSerials.map((serial) => {
+                    const isSelected = (selectedSerials[selectedProductForSerial.product_id] || []).includes(serial.serial_number);
+                    return (
+                      <div
+                        key={serial.serial_number}
+                        className={`serial-item ${isSelected ? 'selected' : ''} ${
+                          !isSelected && (selectedSerials[selectedProductForSerial.product_id] || []).length >= (quantities[selectedProductForSerial.product_id] || 1) ? 'disabled' : ''
+                        }`}
+                        onClick={() => handleSerialSelection(serial.serial_number)}
+                        style={{
+                          cursor: !isSelected && (selectedSerials[selectedProductForSerial.product_id] || []).length >= (quantities[selectedProductForSerial.product_id] || 1) ? 'not-allowed' : 'pointer',
+                          opacity: !isSelected && (selectedSerials[selectedProductForSerial.product_id] || []).length >= (quantities[selectedProductForSerial.product_id] || 1) ? 0.5 : 1
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {}}
+                          className="serial-checkbox"
+                          disabled={!isSelected && (selectedSerials[selectedProductForSerial.product_id] || []).length >= (quantities[selectedProductForSerial.product_id] || 1)}
+                        />
+                        <span className="serial-number">{serial.serial_number}</span>
+                        <span className={`serial-status ${serial.status}`}>{serial.status}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button onClick={handleCloseSerialModal} className="cancel-btn">
+                  Cancel
+                </button>
+                <button onClick={handleConfirmSerialSelection} className="confirm-btn">
+                  Confirm Selection
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

@@ -1,6 +1,6 @@
 import React from 'react';
 import '../styles/App.css';
-import loginLogo from '../assets/login_logo.JPG';
+import loginLogo from '../assets/login_logo.png';
 
 const LogoSection = () => (
   <div className="logo-section">

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 08, 2025 at 08:21 PM
+-- Generation Time: Nov 11, 2025 at 03:29 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.1.25
 
@@ -122,14 +122,14 @@ CREATE TABLE `inventory` (
 --
 
 INSERT INTO `inventory` (`id`, `product_id`, `stock`, `reorder_point`, `supplier_id`, `last_restock_date`, `created_at`, `updated_at`) VALUES
-(4, 'PRD-006', 50, 12, NULL, '2025-11-05 15:10:26', '2025-10-11 13:58:28', '2025-11-08 18:01:28'),
-(5, 'PRD-001', 16, 10, NULL, '2025-10-11 14:02:07', '2025-10-11 14:02:07', '2025-10-14 19:50:07'),
+(4, 'PRD-006', 55, 12, NULL, '2025-11-11 02:20:19', '2025-10-11 13:58:28', '2025-11-11 02:20:19'),
+(5, 'PRD-001', 18, 10, NULL, '2025-11-11 02:19:47', '2025-10-11 14:02:07', '2025-11-11 02:19:47'),
 (6, 'PRD-002', 48, 12, NULL, '2025-10-11 14:02:12', '2025-10-11 14:02:12', '2025-10-14 19:24:58'),
 (7, 'PRD-003', 3, 10, NULL, '2025-10-11 14:02:17', '2025-10-11 14:02:17', '2025-10-14 19:24:58'),
 (8, 'PRD-004', 7, 10, NULL, '2025-11-05 15:10:38', '2025-10-11 14:02:24', '2025-11-05 15:10:38'),
 (9, 'PRD-005', 50, 10, NULL, '2025-10-11 14:02:30', '2025-10-11 14:02:30', '2025-10-11 14:02:30'),
 (10, 'P007', 12, 10, NULL, '2025-10-14 19:49:40', '2025-10-14 19:49:40', '2025-10-14 19:50:07'),
-(11, 'P008', 5, 5, NULL, '2025-11-07 21:11:00', '2025-10-14 20:22:59', '2025-11-08 18:02:06');
+(11, 'P008', 20, 5, NULL, '2025-11-10 17:53:35', '2025-10-14 20:22:59', '2025-11-10 17:53:35');
 
 -- --------------------------------------------------------
 
@@ -282,7 +282,75 @@ INSERT INTO `inventory_transactions` (`id`, `transaction_id`, `inventory_id`, `p
 (124, 'TRX-1762621938127-65', 11, 'P008', 'in', 2, NULL, 'Stock In Entry - Supplier: ednis | Received by: Coco M. | Serial: asdasd', '2025-11-07 21:11:00', 'Coco M.', '2025-11-08 17:12:18', '2025-11-08 17:12:18'),
 (125, 'TRX-1762624832179-88', 11, 'P008', 'in', 1, NULL, 'Return from order SL251021001 - Wrong Item', '2025-11-08 18:00:32', 'Coco M.', '2025-11-08 18:00:32', '2025-11-08 18:00:32'),
 (126, 'TRX-1762624888715-52', 4, 'PRD-006', 'in', 1, NULL, 'Return from order SL251015006 - Wrong Item', '2025-11-08 18:01:28', 'Coco M.', '2025-11-08 18:01:28', '2025-11-08 18:01:28'),
-(127, 'TRX-1762624926880-58', 11, 'P008', 'in', 1, NULL, 'Return from order SL251015005 - Defective/Damaged', '2025-11-08 18:02:06', 'Coco M.', '2025-11-08 18:02:06', '2025-11-08 18:02:06');
+(127, 'TRX-1762624926880-58', 11, 'P008', 'in', 1, NULL, 'Return from order SL251015005 - Defective/Damaged', '2025-11-08 18:02:06', 'Coco M.', '2025-11-08 18:02:06', '2025-11-08 18:02:06'),
+(128, 'TRX-1762630185464-12', 8, 'PRD-004', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-08 19:29:45', 'System', '2025-11-08 19:29:45', '2025-11-08 19:29:45'),
+(129, 'TRX-1762630185642-40', 8, 'PRD-004', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-08 19:29:45', 'System', '2025-11-08 19:29:45', '2025-11-08 19:29:45'),
+(130, 'TRX-1762630185810-21', 8, 'PRD-004', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-08 19:29:45', 'System', '2025-11-08 19:29:45', '2025-11-08 19:29:45'),
+(131, 'TRX-1762630186138-46', 8, 'PRD-004', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-08 19:29:46', 'System', '2025-11-08 19:29:46', '2025-11-08 19:29:46'),
+(132, 'TRX-1762630186291-68', 8, 'PRD-004', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-08 19:29:46', 'System', '2025-11-08 19:29:46', '2025-11-08 19:29:46'),
+(133, 'TRX-1762630186455-17', 8, 'PRD-004', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-08 19:29:46', 'System', '2025-11-08 19:29:46', '2025-11-08 19:29:46'),
+(134, 'TRX-1762630186606-96', 8, 'PRD-004', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-08 19:29:46', 'System', '2025-11-08 19:29:46', '2025-11-08 19:29:46'),
+(135, 'TRX-1762630188363-56', 6, 'PRD-002', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-08 19:29:48', 'System', '2025-11-08 19:29:48', '2025-11-08 19:29:48'),
+(136, 'TRX-1762630188522-72', 6, 'PRD-002', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-08 19:29:48', 'System', '2025-11-08 19:29:48', '2025-11-08 19:29:48'),
+(137, 'TRX-1762630188667-15', 6, 'PRD-002', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-08 19:29:48', 'System', '2025-11-08 19:29:48', '2025-11-08 19:29:48'),
+(138, 'TRX-1762630188826-70', 6, 'PRD-002', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-08 19:29:48', 'System', '2025-11-08 19:29:48', '2025-11-08 19:29:48'),
+(139, 'TRX-1762794457024-31', 4, 'PRD-006', 'in', 1, NULL, 'Bulk Stock In - Supplier: asd | Serial: N/A | Received by: Coco M.', '2025-11-10 17:07:37', 'Coco M.', '2025-11-10 17:07:37', '2025-11-10 17:07:37'),
+(140, 'TRX-1762794500159-50', 4, 'PRD-006', '', 1, NULL, 'Return to Supplier - Supplier: asd | Serial: asd-asd | Returned by: Coco M.', '2025-11-10 09:08:00', 'Coco M.', '2025-11-10 17:08:20', '2025-11-10 17:08:20'),
+(141, 'TRX-1762794743619-17', 11, 'P008', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:12:23', 'System', '2025-11-10 17:12:23', '2025-11-10 17:12:23'),
+(142, 'TRX-1762794745978-79', 4, 'PRD-006', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:12:25', 'System', '2025-11-10 17:12:25', '2025-11-10 17:12:25'),
+(143, 'TRX-1762794746264-48', 4, 'PRD-006', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:12:26', 'System', '2025-11-10 17:12:26', '2025-11-10 17:12:26'),
+(144, 'TRX-1762794746407-61', 4, 'PRD-006', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:12:26', 'System', '2025-11-10 17:12:26', '2025-11-10 17:12:26'),
+(145, 'TRX-1762794746568-57', 4, 'PRD-006', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:12:26', 'System', '2025-11-10 17:12:26', '2025-11-10 17:12:26'),
+(146, 'TRX-1762794746727-73', 4, 'PRD-006', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:12:26', 'System', '2025-11-10 17:12:26', '2025-11-10 17:12:26'),
+(147, 'TRX-1762794746895-68', 4, 'PRD-006', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:12:26', 'System', '2025-11-10 17:12:26', '2025-11-10 17:12:26'),
+(148, 'TRX-1762794747047-21', 4, 'PRD-006', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:12:27', 'System', '2025-11-10 17:12:27', '2025-11-10 17:12:27'),
+(149, 'TRX-1762794747223-43', 4, 'PRD-006', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:12:27', 'System', '2025-11-10 17:12:27', '2025-11-10 17:12:27'),
+(150, 'TRX-1762794747400-16', 4, 'PRD-006', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:12:27', 'System', '2025-11-10 17:12:27', '2025-11-10 17:12:27'),
+(151, 'TRX-1762794747567-25', 4, 'PRD-006', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:12:27', 'System', '2025-11-10 17:12:27', '2025-11-10 17:12:27'),
+(152, 'TRX-1762794747743-27', 4, 'PRD-006', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:12:27', 'System', '2025-11-10 17:12:27', '2025-11-10 17:12:27'),
+(153, 'TRX-1762794747928-91', 4, 'PRD-006', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:12:27', 'System', '2025-11-10 17:12:27', '2025-11-10 17:12:27'),
+(154, 'TRX-1762794748087-50', 4, 'PRD-006', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:12:28', 'System', '2025-11-10 17:12:28', '2025-11-10 17:12:28'),
+(155, 'TRX-1762794748271-33', 4, 'PRD-006', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:12:28', 'System', '2025-11-10 17:12:28', '2025-11-10 17:12:28'),
+(156, 'TRX-1762794749344-10', 4, 'PRD-006', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:12:29', 'System', '2025-11-10 17:12:29', '2025-11-10 17:12:29'),
+(157, 'TRX-1762794962903-52', 11, 'P008', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:16:02', 'System', '2025-11-10 17:16:02', '2025-11-10 17:16:02'),
+(158, 'TRX-1762795073547-17', 4, 'PRD-006', 'in', 1, NULL, 'Bulk Stock In - Supplier: asdasd | Serial: N/A | Received by: Coco M.', '2025-11-10 17:17:53', 'Coco M.', '2025-11-10 17:17:53', '2025-11-10 17:17:53'),
+(159, 'TRX-1762795080751-18', 4, 'PRD-006', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:18:00', 'System', '2025-11-10 17:18:00', '2025-11-10 17:18:00'),
+(160, 'TRX-1762795084025-37', 4, 'PRD-006', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:18:04', 'System', '2025-11-10 17:18:04', '2025-11-10 17:18:04'),
+(161, 'TRX-1762795413661-93', 11, 'P008', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:23:33', 'System', '2025-11-10 17:23:33', '2025-11-10 17:23:33'),
+(162, 'TRX-1762795415392-54', 11, 'P008', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:23:35', 'System', '2025-11-10 17:23:35', '2025-11-10 17:23:35'),
+(163, 'TRX-1762795416137-49', 4, 'PRD-006', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:23:36', 'System', '2025-11-10 17:23:36', '2025-11-10 17:23:36'),
+(164, 'TRX-1762795417528-32', 4, 'PRD-006', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:23:37', 'System', '2025-11-10 17:23:37', '2025-11-10 17:23:37'),
+(165, 'TRX-1762795479205-68', 11, 'P008', 'in', 1, 'ASD123', 'Bulk Stock In - Supplier: ASD | Serial: N/A | Received by: Coco M.', '2025-11-10 17:24:39', 'Coco M.', '2025-11-10 17:24:39', '2025-11-10 17:24:39'),
+(166, 'TRX-1762795491530-37', 11, 'P008', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:24:51', 'System', '2025-11-10 17:24:51', '2025-11-10 17:24:51'),
+(167, 'TRX-1762795492887-68', 11, 'P008', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:24:52', 'System', '2025-11-10 17:24:52', '2025-11-10 17:24:52'),
+(168, 'TRX-1762795493390-57', 11, 'P008', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:24:53', 'System', '2025-11-10 17:24:53', '2025-11-10 17:24:53'),
+(169, 'TRX-1762795493591-82', 11, 'P008', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:24:53', 'System', '2025-11-10 17:24:53', '2025-11-10 17:24:53'),
+(170, 'TRX-1762795493776-65', 11, 'P008', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:24:53', 'System', '2025-11-10 17:24:53', '2025-11-10 17:24:53'),
+(171, 'TRX-1762795493951-99', 11, 'P008', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:24:53', 'System', '2025-11-10 17:24:53', '2025-11-10 17:24:53'),
+(172, 'TRX-1762795495462-25', 11, 'P008', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:24:55', 'System', '2025-11-10 17:24:55', '2025-11-10 17:24:55'),
+(173, 'TRX-1762795613188-58', 11, 'P008', '', 1, 'ASD123', 'Return to Supplier - Supplier: ASD | Serial: ASD123 | Returned by: Coco M.', '2025-11-10 09:26:00', 'Coco M.', '2025-11-10 17:26:53', '2025-11-10 17:26:53'),
+(174, 'TRX-1762795792804-14', 11, 'P008', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:29:52', 'System', '2025-11-10 17:29:52', '2025-11-10 17:29:52'),
+(175, 'TRX-1762795795891-24', 11, 'P008', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:29:55', 'System', '2025-11-10 17:29:55', '2025-11-10 17:29:55'),
+(176, 'TRX-1762796132123-59', 11, 'P008', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:35:32', 'System', '2025-11-10 17:35:32', '2025-11-10 17:35:32'),
+(177, 'TRX-1762796133767-57', 11, 'P008', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:35:33', 'System', '2025-11-10 17:35:33', '2025-11-10 17:35:33'),
+(178, 'TRX-1762796572404-74', 11, 'P008', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:42:52', 'System', '2025-11-10 17:42:52', '2025-11-10 17:42:52'),
+(179, 'TRX-1762796600930-27', 11, 'P008', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:43:20', 'System', '2025-11-10 17:43:20', '2025-11-10 17:43:20'),
+(180, 'TRX-1762796647459-78', 11, 'P008', 'in', 3, 'asd124', 'Bulk Stock In - Supplier: asd | Serial: N/A | Received by: Coco M.', '2025-11-10 17:44:07', 'Coco M.', '2025-11-10 17:44:07', '2025-11-10 17:44:07'),
+(181, 'TRX-1762796696475-25', 11, 'P008', 'in', 2, 'TB12', 'Bulk Stock In - Supplier: HAHAHA | Serial: N/A | Received by: Coco M.', '2025-11-10 17:44:56', 'Coco M.', '2025-11-10 17:44:56', '2025-11-10 17:44:56'),
+(182, 'TRX-1762796735993-47', 11, 'P008', 'in', 2, 'TB32', 'Bulk Stock In - Supplier: ASD | Serial: N/A | Received by: Coco M.', '2025-11-10 17:45:35', 'Coco M.', '2025-11-10 17:45:35', '2025-11-10 17:45:35'),
+(183, 'TRX-1762796744479-66', 11, 'P008', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:45:44', 'System', '2025-11-10 17:45:44', '2025-11-10 17:45:44'),
+(184, 'TRX-1762796873740-16', 11, 'P008', 'in', 2, '1231', 'Bulk Stock In - Supplier: 132 | Serial: N/A | Received by: Coco M.', '2025-11-10 17:47:53', 'Coco M.', '2025-11-10 17:47:53', '2025-11-10 17:47:53'),
+(185, 'TRX-1762796956178-75', 11, 'P008', 'in', 3, 'ASD111', 'Bulk Stock In - Supplier: HONDATKT | Serial: N/A | Received by: Coco M.', '2025-11-10 17:49:16', 'Coco M.', '2025-11-10 17:49:16', '2025-11-10 17:49:16'),
+(186, 'TRX-1762796997580-71', 11, 'P008', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:49:57', 'System', '2025-11-10 17:49:57', '2025-11-10 17:49:57'),
+(187, 'TRX-1762797027763-56', 11, 'P008', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:50:27', 'System', '2025-11-10 17:50:27', '2025-11-10 17:50:27'),
+(188, 'TRX-1762797035133-34', 11, 'P008', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:50:35', 'System', '2025-11-10 17:50:35', '2025-11-10 17:50:35'),
+(189, 'TRX-1762797157425-67', 11, 'P008', 'in', 1, 'ASD-123', 'Bulk Stock In - Supplier: ASDHAHAH | Serial: N/A | Received by: Coco M.', '2025-11-10 17:52:37', 'Coco M.', '2025-11-10 17:52:37', '2025-11-10 17:52:37'),
+(190, 'TRX-1762797215055-90', 11, 'P008', 'in', 2, 'TBC-001', 'Bulk Stock In - Supplier: HondaSUpplier | Serial: N/A | Received by: Coco M.', '2025-11-10 17:53:35', 'Coco M.', '2025-11-10 17:53:35', '2025-11-10 17:53:35'),
+(191, 'TRX-1762797460147-68', 11, 'P008', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 17:57:40', 'System', '2025-11-10 17:57:40', '2025-11-10 17:57:40'),
+(192, 'TRX-1762797729652-15', 11, 'P008', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 18:02:09', 'System', '2025-11-10 18:02:09', '2025-11-10 18:02:09'),
+(193, 'TRX-1762797753650-34', 11, 'P008', 'out', 0, NULL, 'Stock update through admin interface', '2025-11-10 18:02:33', 'System', '2025-11-10 18:02:33', '2025-11-10 18:02:33'),
+(194, 'TRX-1762827587152-38', 5, 'PRD-001', 'in', 2, 'EOF001', 'Bulk Stock In - Supplier: Misaki | Serial: N/A | Received by: Coco M.', '2025-11-11 02:19:47', 'Coco M.', '2025-11-11 02:19:47', '2025-11-11 02:19:47'),
+(195, 'TRX-1762827619595-32', 4, 'PRD-006', 'in', 4, 'HAHAHA01', 'Bulk Stock In - Supplier: SECRETSHOP | Serial: N/A | Received by: Coco M.', '2025-11-11 02:20:19', 'Coco M.', '2025-11-11 02:20:19', '2025-11-11 02:20:19');
 
 -- --------------------------------------------------------
 
@@ -302,22 +370,23 @@ CREATE TABLE `products` (
   `image` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `vehicle_compatibility` text DEFAULT NULL
+  `vehicle_compatibility` text DEFAULT NULL,
+  `requires_serial` tinyint(1) NOT NULL DEFAULT 0 COMMENT '1 if product requires serial number tracking'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `products`
 --
 
-INSERT INTO `products` (`id`, `product_id`, `name`, `brand`, `category`, `price`, `status`, `description`, `image`, `created_at`, `updated_at`, `vehicle_compatibility`) VALUES
-(1, 'PRD-001', 'Engine Oil Filter', 'Akebono', 'Engine & Cooling', 4500.00, 'Active', 'High-quality engine oil filter for various vehicle models', '/uploads/image-1761028296231-713914561.jpg', '2025-10-11 11:11:17', '2025-10-21 06:31:36', NULL),
-(2, 'PRD-002', 'Brake Pad Set', 'Honda', 'Brake Parts', 1200.00, 'Active', 'Front brake pad set for sedans and SUVs', '/uploads/image-1761028335428-830091597.jpg', '2025-10-11 11:11:17', '2025-11-05 15:02:21', NULL),
-(3, 'PRD-003', 'Shock Absorber', 'KYB', 'Suspension & Steering', 3500.00, 'Active', 'Rear shock absorber for pickup trucks', '/uploads/image-1761028355485-181145703.jpg', '2025-10-11 11:11:17', '2025-10-21 06:32:35', NULL),
-(4, 'PRD-004', 'Radiator Hose', 'Gates', 'Engine & Cooling', 680.00, 'Active', 'Upper radiator hose for diesel engines', '/uploads/image-1760189191563-350730914.jpg', '2025-10-11 11:11:17', '2025-10-11 13:26:31', NULL),
-(5, 'PRD-005', 'CV Joint Boot', 'Moog', 'Transmission', 320.00, 'Active', 'CV joint boot kit with clamps and grease', '/uploads/image-1760189149859-123979443.jpg', '2025-10-11 11:11:17', '2025-10-11 13:25:49', NULL),
-(6, 'PRD-006', 'GHAHAHAHA', 'Akebono', 'Brake Parts', 1600.00, 'Active', 'hahaha', '/uploads/image-1761028234398-382271106.jpg', '2025-10-11 12:10:49', '2025-10-21 06:30:34', NULL),
-(7, 'P007', 'GAGO', 'Akebono', 'Brake Parts', 5000.00, 'Inactive', 'GAGOGAGAOGAOGAO', '/uploads/image-1760471370435-377723803.jpg', '2025-10-14 19:49:30', '2025-10-14 20:20:25', NULL),
-(8, 'P008', 'Turbocharger', 'Akebono', 'Transmission', 50000.00, 'Active', 'this turbo is shit\r\n', '/uploads/image-1760473363109-453700899.jpg', '2025-10-14 20:22:43', '2025-11-08 19:02:13', 'Toyota hilux');
+INSERT INTO `products` (`id`, `product_id`, `name`, `brand`, `category`, `price`, `status`, `description`, `image`, `created_at`, `updated_at`, `vehicle_compatibility`, `requires_serial`) VALUES
+(1, 'PRD-001', 'Engine Oil Filter', 'Akebono', 'Engine & Cooling', 4500.00, 'Active', 'High-quality engine oil filter for various vehicle models', '/uploads/image-1761028296231-713914561.jpg', '2025-10-11 11:11:17', '2025-11-10 18:01:41', NULL, 1),
+(2, 'PRD-002', 'Brake Pad Set', 'Honda', 'Brake Parts', 1200.00, 'Active', 'Front brake pad set for sedans and SUVs', '/uploads/image-1761028335428-830091597.jpg', '2025-10-11 11:11:17', '2025-11-10 18:01:52', NULL, 1),
+(3, 'PRD-003', 'Shock Absorber', 'KYB', 'Suspension & Steering', 3500.00, 'Active', 'Rear shock absorber for pickup trucks', '/uploads/image-1761028355485-181145703.jpg', '2025-10-11 11:11:17', '2025-11-10 18:01:52', NULL, 1),
+(4, 'PRD-004', 'Radiator Hose', 'Gates', 'Engine & Cooling', 680.00, 'Active', 'Upper radiator hose for diesel engines', '/uploads/image-1760189191563-350730914.jpg', '2025-10-11 11:11:17', '2025-11-10 18:01:52', NULL, 1),
+(5, 'PRD-005', 'CV Joint Boot', 'Moog', 'Transmission', 320.00, 'Active', 'CV joint boot kit with clamps and grease', '/uploads/image-1760189149859-123979443.jpg', '2025-10-11 11:11:17', '2025-11-10 18:01:52', NULL, 1),
+(6, 'PRD-006', 'GHAHAHAHA', 'Akebono', 'Brake Parts', 1600.00, 'Active', 'hahaha', '/uploads/image-1761028234398-382271106.jpg', '2025-10-11 12:10:49', '2025-11-10 18:01:41', NULL, 1),
+(7, 'P007', 'GAGO', 'Akebono', 'Brake Parts', 5000.00, 'Inactive', 'GAGOGAGAOGAOGAO', '/uploads/image-1760471370435-377723803.jpg', '2025-10-14 19:49:30', '2025-11-10 18:01:52', NULL, 1),
+(8, 'P008', 'Turbocharger', 'Akebono', 'Transmission', 50000.00, 'Active', 'this turbo is shit\r\n', '/uploads/image-1760473363109-453700899.jpg', '2025-10-14 20:22:43', '2025-11-10 18:01:41', 'Toyota hilux', 1);
 
 -- --------------------------------------------------------
 
@@ -475,36 +544,80 @@ CREATE TABLE `sale_items` (
   `price` decimal(10,2) NOT NULL,
   `quantity` int(11) NOT NULL,
   `returned_quantity` int(11) DEFAULT 0,
-  `subtotal` decimal(10,2) NOT NULL
+  `subtotal` decimal(10,2) NOT NULL,
+  `serial_numbers` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'Array of serial numbers for this sale item' CHECK (json_valid(`serial_numbers`))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `sale_items`
 --
 
-INSERT INTO `sale_items` (`id`, `sale_id`, `product_id`, `product_name`, `brand`, `price`, `quantity`, `returned_quantity`, `subtotal`) VALUES
-(1, 1, 'PRD-006', 'GHAHAHAHA', 'Akebono', 1600.00, 3, 0, 4800.00),
-(2, 2, 'PRD-006', 'GHAHAHAHA', 'Akebono', 1600.00, 1, 0, 1600.00),
-(3, 2, 'PRD-001', 'Engine Oil Filter', 'Akebono', 4500.00, 1, 0, 4500.00),
-(4, 2, 'PRD-002', 'Brake Pad Set', 'Akebono', 1200.00, 1, 0, 1200.00),
-(5, 2, 'PRD-003', 'Shock Absorber', 'KYB', 3500.00, 1, 0, 3500.00),
-(6, 2, 'PRD-004', 'Radiator Hose', 'Gates', 680.00, 1, 0, 680.00),
-(7, 3, 'PRD-006', 'GHAHAHAHA', 'Akebono', 1600.00, 1, 0, 1600.00),
-(8, 3, 'PRD-001', 'Engine Oil Filter', 'Akebono', 4500.00, 1, 0, 4500.00),
-(9, 4, 'PRD-006', 'GHAHAHAHA', 'Akebono', 1600.00, 1, 0, 1600.00),
-(10, 4, 'PRD-001', 'Engine Oil Filter', 'Akebono', 4500.00, 1, 0, 4500.00),
-(11, 4, 'PRD-002', 'Brake Pad Set', 'Akebono', 1200.00, 1, 0, 1200.00),
-(12, 4, 'PRD-003', 'Shock Absorber', 'KYB', 3500.00, 3, 0, 10500.00),
-(13, 5, 'PRD-006', 'GHAHAHAHA', 'Akebono', 1600.00, 1, 0, 1600.00),
-(14, 6, 'P007', 'GAGO', 'Akebono', 5000.00, 3, 0, 15000.00),
-(15, 6, 'PRD-006', 'GHAHAHAHA', 'Akebono', 1600.00, 1, 0, 1600.00),
-(16, 6, 'PRD-001', 'Engine Oil Filter', 'Akebono', 4500.00, 1, 0, 4500.00),
-(17, 7, 'P008', 'Turbocharger', 'Akebono', 50000.00, 1, 1, 50000.00),
-(18, 8, 'P008', 'Turbocharger', 'Akebono', 50000.00, 1, 0, 50000.00),
-(19, 8, 'PRD-006', 'GHAHAHAHA', 'Akebono', 1600.00, 1, 1, 1600.00),
-(20, 9, 'P008', 'Turbocharger', 'Akebono', 50000.00, 2, 1, 100000.00),
-(21, 10, 'P008', 'Turbocharger', 'Akebono', 50000.00, 1, 1, 50000.00),
-(22, 11, 'PRD-006', 'GHAHAHAHA', 'Akebono', 1600.00, 2, 1, 3200.00);
+INSERT INTO `sale_items` (`id`, `sale_id`, `product_id`, `product_name`, `brand`, `price`, `quantity`, `returned_quantity`, `subtotal`, `serial_numbers`) VALUES
+(1, 1, 'PRD-006', 'GHAHAHAHA', 'Akebono', 1600.00, 3, 0, 4800.00, NULL),
+(2, 2, 'PRD-006', 'GHAHAHAHA', 'Akebono', 1600.00, 1, 0, 1600.00, NULL),
+(3, 2, 'PRD-001', 'Engine Oil Filter', 'Akebono', 4500.00, 1, 0, 4500.00, NULL),
+(4, 2, 'PRD-002', 'Brake Pad Set', 'Akebono', 1200.00, 1, 0, 1200.00, NULL),
+(5, 2, 'PRD-003', 'Shock Absorber', 'KYB', 3500.00, 1, 0, 3500.00, NULL),
+(6, 2, 'PRD-004', 'Radiator Hose', 'Gates', 680.00, 1, 0, 680.00, NULL),
+(7, 3, 'PRD-006', 'GHAHAHAHA', 'Akebono', 1600.00, 1, 0, 1600.00, NULL),
+(8, 3, 'PRD-001', 'Engine Oil Filter', 'Akebono', 4500.00, 1, 0, 4500.00, NULL),
+(9, 4, 'PRD-006', 'GHAHAHAHA', 'Akebono', 1600.00, 1, 0, 1600.00, NULL),
+(10, 4, 'PRD-001', 'Engine Oil Filter', 'Akebono', 4500.00, 1, 0, 4500.00, NULL),
+(11, 4, 'PRD-002', 'Brake Pad Set', 'Akebono', 1200.00, 1, 0, 1200.00, NULL),
+(12, 4, 'PRD-003', 'Shock Absorber', 'KYB', 3500.00, 3, 0, 10500.00, NULL),
+(13, 5, 'PRD-006', 'GHAHAHAHA', 'Akebono', 1600.00, 1, 0, 1600.00, NULL),
+(14, 6, 'P007', 'GAGO', 'Akebono', 5000.00, 3, 0, 15000.00, NULL),
+(15, 6, 'PRD-006', 'GHAHAHAHA', 'Akebono', 1600.00, 1, 0, 1600.00, NULL),
+(16, 6, 'PRD-001', 'Engine Oil Filter', 'Akebono', 4500.00, 1, 0, 4500.00, NULL),
+(17, 7, 'P008', 'Turbocharger', 'Akebono', 50000.00, 1, 1, 50000.00, NULL),
+(18, 8, 'P008', 'Turbocharger', 'Akebono', 50000.00, 1, 0, 50000.00, NULL),
+(19, 8, 'PRD-006', 'GHAHAHAHA', 'Akebono', 1600.00, 1, 1, 1600.00, NULL),
+(20, 9, 'P008', 'Turbocharger', 'Akebono', 50000.00, 2, 1, 100000.00, NULL),
+(21, 10, 'P008', 'Turbocharger', 'Akebono', 50000.00, 1, 1, 50000.00, NULL),
+(22, 11, 'PRD-006', 'GHAHAHAHA', 'Akebono', 1600.00, 2, 1, 3200.00, NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `serial_numbers`
+--
+
+CREATE TABLE `serial_numbers` (
+  `id` int(11) NOT NULL,
+  `serial_number` varchar(100) NOT NULL,
+  `product_id` varchar(20) NOT NULL,
+  `status` enum('available','sold','returned','defective') NOT NULL DEFAULT 'available',
+  `sale_id` int(11) DEFAULT NULL,
+  `sale_item_id` int(11) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `serial_numbers`
+--
+
+INSERT INTO `serial_numbers` (`id`, `serial_number`, `product_id`, `status`, `sale_id`, `sale_item_id`, `notes`, `created_at`, `updated_at`) VALUES
+(1, 'ASD-123', 'P008', 'available', NULL, NULL, 'Stock In - ASDHAHAH', '2025-11-10 17:52:37', '2025-11-10 17:52:37'),
+(2, 'TBC-001', 'P008', 'available', NULL, NULL, 'Stock In - HondaSUpplier', '2025-11-10 17:53:35', '2025-11-10 17:53:35'),
+(3, 'smpl-001', 'PRD-006', 'available', NULL, NULL, 'Stock In - sample', '2025-11-10 17:56:10', '2025-11-10 17:56:10'),
+(4, 'smpl-002', 'PRD-006', 'available', NULL, NULL, 'Stock In - sample', '2025-11-10 17:56:10', '2025-11-10 17:56:10'),
+(5, 'SAMPLE-123', 'P008', 'available', NULL, NULL, 'Stock In - sample2', '2025-11-10 17:59:55', '2025-11-10 17:59:55'),
+(6, 'SAMPLE-321', 'P008', 'available', NULL, NULL, 'Stock In - sample2', '2025-11-10 17:59:55', '2025-11-10 17:59:55'),
+(7, 'gago', 'P008', 'available', NULL, NULL, 'Stock In - gago', '2025-11-10 18:01:11', '2025-11-10 18:01:11'),
+(8, 'TURBO-001', 'P008', 'available', NULL, NULL, 'Stock In - TURBOPH', '2025-11-10 18:03:55', '2025-11-10 18:03:55'),
+(9, 'TURBO-002', 'P008', 'available', NULL, NULL, 'Stock In - TURBOPH', '2025-11-10 18:03:55', '2025-11-10 18:03:55'),
+(10, 'TURBO-003', 'P008', 'available', NULL, NULL, 'Stock In - TURBOPH', '2025-11-10 18:06:34', '2025-11-10 18:06:34'),
+(11, 'TURBO-004', 'P008', 'available', NULL, NULL, 'Stock In - TURBOPH', '2025-11-10 18:06:34', '2025-11-10 18:06:34'),
+(12, 'TURBO-005', 'P008', 'available', NULL, NULL, 'Stock In - TURBOPH', '2025-11-10 18:07:32', '2025-11-10 18:07:32'),
+(13, 'TURBO-006', 'P008', 'available', NULL, NULL, 'Stock In - TURBOPH', '2025-11-10 18:07:32', '2025-11-10 18:07:32'),
+(15, 'EOF001', 'PRD-001', 'available', NULL, NULL, 'Stock In - Misaki', '2025-11-11 02:19:46', '2025-11-11 02:19:46'),
+(16, 'EOF002', 'PRD-001', 'available', NULL, NULL, 'Stock In - Misaki', '2025-11-11 02:19:46', '2025-11-11 02:19:46'),
+(17, 'HAHAHA01', 'PRD-006', 'available', NULL, NULL, 'Stock In - SECRETSHOP', '2025-11-11 02:20:19', '2025-11-11 02:20:19'),
+(18, 'HAHAHA02', 'PRD-006', 'available', NULL, NULL, 'Stock In - SECRETSHOP', '2025-11-11 02:20:19', '2025-11-11 02:20:19'),
+(19, 'HAHAHA03', 'PRD-006', 'available', NULL, NULL, 'Stock In - SECRETSHOP', '2025-11-11 02:20:19', '2025-11-11 02:20:19'),
+(20, 'HAHAHA04', 'PRD-006', 'available', NULL, NULL, 'Stock In - SECRETSHOP', '2025-11-11 02:20:19', '2025-11-11 02:20:19');
 
 -- --------------------------------------------------------
 
@@ -553,7 +666,7 @@ CREATE TABLE `users` (
 INSERT INTO `users` (`id`, `username`, `first_name`, `middle_name`, `last_name`, `avatar`, `email`, `password_hash`, `role`, `status`, `created_at`, `updated_at`) VALUES
 (1, 'Coco M.', NULL, NULL, NULL, '/uploads/avatar-1762158868326-642667687.jpg', 'admin@gmail.com', '$2a$10$MpVMcstcDXulXAwf.CPzEOvWhpnMR2nXu5wKepRt4JVrvf8aJcvvG', 'admin', 'Active', '2025-10-20 17:05:18', '2025-11-03 08:34:28'),
 (2, 'driver-nim', NULL, NULL, NULL, '/uploads/avatar-1762265933322-515944831.png', 'tjc_driver@gmail.com', '$2a$10$Xv3YuUayTfZKRMBeimeeqegRw.gdHObECa5iaJLkkKqRuHkY3OqwG', 'driver', 'Active', '2025-10-20 17:09:17', '2025-11-04 14:18:53'),
-(3, 'rat, bu D.', 'bu', 'D.', 'rat', '/uploads/avatar-1762626057263-322459360.jpg', 'asdsadas@gmail.com', '$2a$10$Z.lgKyh.PidTp9opECcfN./W4N8fudnA2wj1xP2FvGrt0rhSN8HHa', 'staff', 'Active', '2025-11-08 18:20:57', '2025-11-08 18:20:57');
+(3, 'rat, bu D.', 'bu', 'D.', 'rat', '/uploads/avatar-1762626057263-322459360.jpg', 'asdsadas@gmail.com', '$2a$10$Z.lgKyh.PidTp9opECcfN./W4N8fudnA2wj1xP2FvGrt0rhSN8HHa', 'admin', 'Active', '2025-11-08 18:20:57', '2025-11-08 19:29:17');
 
 --
 -- Indexes for dumped tables
@@ -656,6 +769,17 @@ ALTER TABLE `sale_items`
   ADD KEY `idx_sale_items_product_id` (`product_id`);
 
 --
+-- Indexes for table `serial_numbers`
+--
+ALTER TABLE `serial_numbers`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_serial_per_product` (`serial_number`,`product_id`),
+  ADD KEY `idx_product_id` (`product_id`),
+  ADD KEY `idx_serial_number` (`serial_number`),
+  ADD KEY `idx_status` (`status`),
+  ADD KEY `idx_sale_id` (`sale_id`);
+
+--
 -- Indexes for table `suppliers`
 --
 ALTER TABLE `suppliers`
@@ -708,7 +832,7 @@ ALTER TABLE `inventory`
 -- AUTO_INCREMENT for table `inventory_transactions`
 --
 ALTER TABLE `inventory_transactions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=128;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=196;
 
 --
 -- AUTO_INCREMENT for table `products`
@@ -745,6 +869,12 @@ ALTER TABLE `sales`
 --
 ALTER TABLE `sale_items`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+
+--
+-- AUTO_INCREMENT for table `serial_numbers`
+--
+ALTER TABLE `serial_numbers`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT for table `suppliers`
@@ -801,6 +931,13 @@ ALTER TABLE `return_items`
 ALTER TABLE `sale_items`
   ADD CONSTRAINT `sale_items_ibfk_1` FOREIGN KEY (`sale_id`) REFERENCES `sales` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `sale_items_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`);
+
+--
+-- Constraints for table `serial_numbers`
+--
+ALTER TABLE `serial_numbers`
+  ADD CONSTRAINT `fk_serial_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_serial_sale` FOREIGN KEY (`sale_id`) REFERENCES `sales` (`id`) ON DELETE SET NULL;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

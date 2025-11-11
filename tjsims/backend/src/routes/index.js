@@ -8,6 +8,7 @@ import dashboardRoutes from './api/dashboard.js';
 import authRoutes from './api/auth.js';
 import usersRoutes from './api/users.js';
 import settingsRoutes from './api/settings.js';
+import serialNumbersRoutes from './api/serialNumbers.js';
 
 const router = express.Router();
 
@@ -21,6 +22,7 @@ router.use('/dashboard', dashboardRoutes);
 router.use('/auth', authRoutes);
 router.use('/users', usersRoutes);
 router.use('/settings', settingsRoutes);
+router.use('/serial-numbers', serialNumbersRoutes);
 
 // Health check
 router.get('/health', (req, res) => {

@@ -179,7 +179,7 @@ export class Inventory {
 
       // Process each product
       for (const product of products) {
-        const { productId, quantity } = product;
+        const { productId, quantity, serialNumber: productSerial } = product;
 
         if (!productId || !quantity || quantity <= 0) {
           throw new Error(`Invalid product data: productId=${productId}, quantity=${quantity}`);
@@ -223,6 +223,9 @@ export class Inventory {
           inventoryId = inventory[0].id;
         }
 
+        // Note: Serial numbers are created via the SerialNumber API before this method is called
+        // So we don't create them here to avoid duplicates
+
         // Record transaction
         const transactionId = `TRX-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
         await connection.execute(
@@ -232,18 +235,136 @@ export class Inventory {
              product_id,
              transaction_type,
              quantity,
+             serial_number,
              notes,
              transaction_date,
              created_by
-           ) VALUES (?, ?, ?, 'in', ?, ?, ?, ?)`,
+           ) VALUES (?, ?, ?, 'in', ?, ?, ?, ?, ?)`,
           [
             transactionId,
             inventoryId,
             productId,
             quantity,
+            productSerial || null,
             notes,
             transactionDate,
             receivedBy
+          ]
+        );
+      }
+
+      await connection.commit();
+      return true;
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  static async returnToSupplier({ supplier, returnedBy, returnDate, products }) {
+    const pool = getPool();
+    const connection = await pool.getConnection();
+
+    try {
+      await connection.beginTransaction();
+
+      const transactionDate = returnDate ? new Date(returnDate) : new Date();
+
+      // Process each product
+      for (const product of products) {
+        const { productId, serialNumber, quantity } = product;
+
+        if (!productId || !quantity || quantity <= 0) {
+          throw new Error(`Invalid product data: productId=${productId}, quantity=${quantity}`);
+        }
+
+        // Verify product exists
+        const [productExists] = await connection.execute(
+          'SELECT product_id FROM products WHERE product_id = ?',
+          [productId]
+        );
+
+        if (!productExists[0]) {
+          throw new Error(`Product ${productId} not found`);
+        }
+
+        // Get inventory record
+        const [inventory] = await connection.execute(
+          'SELECT * FROM inventory WHERE product_id = ?',
+          [productId]
+        );
+
+        if (!inventory[0]) {
+          throw new Error(`No inventory record found for product ${productId}`);
+        }
+
+        // Check if sufficient stock available
+        if (inventory[0].stock < quantity) {
+          throw new Error(`Insufficient stock for product ${productId}. Available: ${inventory[0].stock}, Requested: ${quantity}`);
+        }
+
+        const inventoryId = inventory[0].id;
+
+        // Update inventory - deduct the returned quantity
+        const newStock = inventory[0].stock - quantity;
+        await connection.execute(
+          `UPDATE inventory 
+           SET stock = ?
+           WHERE product_id = ?`,
+          [newStock, productId]
+        );
+
+        // Mark serial number as defective if provided
+        if (serialNumber) {
+          // Check if serial number exists
+          const [existingSerial] = await connection.execute(
+            'SELECT id, status FROM serial_numbers WHERE serial_number = ? AND product_id = ?',
+            [serialNumber, productId]
+          );
+
+          if (existingSerial.length === 0) {
+            throw new Error(`Serial number ${serialNumber} not found for product ${productId}`);
+          }
+
+          if (existingSerial[0].status !== 'available') {
+            throw new Error(`Serial number ${serialNumber} is not available (current status: ${existingSerial[0].status})`);
+          }
+
+          // Mark as defective
+          await connection.execute(
+            `UPDATE serial_numbers 
+             SET status = 'defective', notes = ?, updated_at = CURRENT_TIMESTAMP
+             WHERE serial_number = ?`,
+            [`Returned to Supplier: ${supplier}`, serialNumber]
+          );
+        }
+
+        // Record transaction
+        const notes = `Return to Supplier - Supplier: ${supplier} | Serial: ${serialNumber || 'N/A'} | Returned by: ${returnedBy}`;
+        const transactionId = `TRX-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+        await connection.execute(
+          `INSERT INTO inventory_transactions (
+             transaction_id,
+             inventory_id,
+             product_id,
+             transaction_type,
+             quantity,
+             serial_number,
+             notes,
+             transaction_date,
+             created_by
+           ) VALUES (?, ?, ?, 'return_to_supplier', ?, ?, ?, ?, ?)`,
+          [
+            transactionId,
+            inventoryId,
+            productId,
+            quantity,
+            serialNumber || null,
+            notes,
+            transactionDate,
+            returnedBy
           ]
         );
       }

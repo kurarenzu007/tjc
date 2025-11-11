@@ -56,5 +56,18 @@ export const inventoryAPI = {
       credentials: 'include'
     });
     return handleResponse(response);
+  },
+
+  // Return to supplier for multiple products
+  returnToSupplier: async (data) => {
+    const response = await fetch(`${API_BASE_URL}/inventory/return-to-supplier`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data),
+      credentials: 'include'
+    });
+    return handleResponse(response);
   }
 };

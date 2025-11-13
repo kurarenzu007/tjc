@@ -183,8 +183,7 @@ const SalesPage = () => {
     }
 
     try {
-      // Update inventory first (subtract stock)
-      await inventoryAPI.updateStock(product.product_id, -quantity);
+      // REVISION: REMOVED inventoryAPI.updateStock call
 
       const existingItem = cart.find(item => item.product_id === product.product_id);
 
@@ -220,14 +219,14 @@ const SalesPage = () => {
         [product.product_id]: 1
       }));
 
-      // Update local state to reflect stock change
+      // REVISION: Update LOCAL state to reflect stock change
       setProducts(products.map(p =>
         p.product_id === product.product_id
           ? { ...p, stock: p.stock - quantity }
           : p
       ));
 
-      // Update inventory map
+      // REVISION: Update LOCAL inventory map
       setInventory(prev => ({
         ...prev,
         [product.product_id]: {
@@ -247,20 +246,19 @@ const SalesPage = () => {
     if (!itemToRemove) return;
 
     try {
-      // Update inventory (add stock back)
-      await inventoryAPI.updateStock(productId, itemToRemove.quantity);
+      // REVISION: REMOVED inventoryAPI.updateStock call
 
       // Remove from cart
       setCart(cart.filter(item => item.product_id !== productId));
 
-      // Update local state to reflect stock change
+      // REVISION: Update LOCAL state to reflect stock change
       setProducts(products.map(p =>
         p.product_id === productId
           ? { ...p, stock: p.stock + itemToRemove.quantity }
           : p
       ));
 
-      // Update inventory map
+      // REVISION: Update LOCAL inventory map
       setInventory(prev => ({
         ...prev,
         [productId]: {
@@ -298,6 +296,7 @@ const SalesPage = () => {
     try {
       // Check stock availability for increases
       if (quantityDifference > 0) {
+        // REVISION: Check against LOCAL inventory
         const currentStock = inventory[productId]?.stock || 0;
         if (currentStock < quantityDifference) {
           alert(`Insufficient stock. Available: ${currentStock}, Needed: ${quantityDifference}`);
@@ -305,8 +304,7 @@ const SalesPage = () => {
         }
       }
 
-      // Update inventory
-      await inventoryAPI.updateStock(productId, -quantityDifference);
+      // REVISION: REMOVED inventoryAPI.updateStock call
 
       // Update cart
       setCart(cart.map(cartItem =>
@@ -315,14 +313,14 @@ const SalesPage = () => {
           : cartItem
       ));
 
-      // Update local state to reflect stock change
+      // REVISION: Update LOCAL state to reflect stock change
       setProducts(products.map(p =>
         p.product_id === productId
           ? { ...p, stock: p.stock - quantityDifference }
           : p
       ));
 
-      // Update inventory map
+      // REVISION: Update LOCAL inventory map
       setInventory(prev => ({
         ...prev,
         [productId]: {
@@ -423,26 +421,29 @@ const SalesPage = () => {
     if (cart.length === 0) return;
 
     try {
-      // Add all stock back for each item in cart
-      for (const item of cart) {
-        await inventoryAPI.updateStock(item.product_id, item.quantity);
+      // REVISION: Do not call API. Just revert local state.
+      // Add all stock back for each item in cart LOCALLY
+      let tempProducts = [...products];
+      let tempInventory = { ...inventory };
 
-        // Update local state to reflect stock change
-        setProducts(products.map(p =>
+      for (const item of cart) {
+        tempProducts = tempProducts.map(p =>
           p.product_id === item.product_id
             ? { ...p, stock: p.stock + item.quantity }
             : p
-        ));
+        );
 
-        // Update inventory map
-        setInventory(prev => ({
-          ...prev,
+        tempInventory = {
+          ...tempInventory,
           [item.product_id]: {
-            ...prev[item.product_id],
-            stock: prev[item.product_id].stock + item.quantity
+            ...tempInventory[item.product_id],
+            stock: tempInventory[item.product_id].stock + item.quantity
           }
-        }));
+        };
       }
+
+      setProducts(tempProducts);
+      setInventory(tempInventory);
 
       // Clear the cart
       setCart([]);
@@ -603,20 +604,7 @@ const SalesPage = () => {
       const saleNo = result?.data?.sale_number || 'N/A';
       const saleId = result?.data?.sale_id;
 
-      // Mark serial numbers as sold if sale was created successfully
-      if (saleId && result.success) {
-        try {
-          // Collect all serial numbers from cart items
-          const allSerialNumbers = cart.flatMap(item => item.serialNumbers || []).filter(sn => sn);
-          
-          if (allSerialNumbers.length > 0) {
-            await serialNumberAPI.markAsSold(allSerialNumbers, saleId);
-          }
-        } catch (serialError) {
-          console.error('Error marking serial numbers as sold:', serialError);
-          // Don't fail the sale, just log the error
-        }
-      }
+      // REVISION: REMOVED serialNumberAPI.markAsSold call. This is now handled by the backend.
 
       // Auto-generate and download receipt
       try {
@@ -638,18 +626,25 @@ const SalesPage = () => {
       }
 
       alert(`Sale confirmed successfully!\nSale Number: ${saleNo}\nTotal: ₱${getCartTotal().toLocaleString()}\nCustomer: ${fullName}`);
-      clearCart();
+      
+      // REVISION: Clear cart (which now only affects local state)
+      // Note: We call clearCart *before* clearCustomerInfo
+      await clearCart(); 
       clearCustomerInfo();
 
       // Show refresh indicator and refresh inventory data
       setLoading(true);
       await new Promise(resolve => setTimeout(resolve, 500)); // Small delay for visual feedback
       await fetchProductsAndInventory();
-      setLoading(false);
+      // setLoading(false); // fetchProductsAndInventory will set this
 
     } catch (error) {
       console.error('Error creating sale:', error);
       alert('Failed to create sale. Please try again.');
+      // REVISION: If sale fails, we must refresh our local state
+      // to get the correct stock levels back from the server
+      // as our local state might be out of sync.
+      await fetchProductsAndInventory();
     } finally {
       setSubmitting(false);
     }

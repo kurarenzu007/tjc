@@ -32,15 +32,35 @@ export class Sales {
 
       // Insert sale items and update inventory
       for (const item of items) {
-        const { product_id, product_name, brand, price, quantity } = item;
+        const { product_id, product_name, brand, price, quantity, serialNumbers } = item;
         const subtotal = price * quantity;
 
         // Insert sale item
-        await connection.execute(
+        const [itemResult] = await connection.execute(
           `INSERT INTO sale_items (sale_id, product_id, product_name, brand, price, quantity, subtotal)
            VALUES (?, ?, ?, ?, ?, ?, ?)`,
           [saleId, product_id, product_name, brand, price, quantity, subtotal]
         );
+        
+        // REVISION: Get the inserted sale_item_id
+        const saleItemId = itemResult.insertId;
+
+        // REVISION: Mark serial numbers as sold, inside the transaction
+        if (serialNumbers && serialNumbers.length > 0) {
+          for (const sn of serialNumbers) {
+            const [updateResult] = await connection.execute(
+              `UPDATE serial_numbers 
+               SET status = 'sold', sale_id = ?, sale_item_id = ? 
+               WHERE serial_number = ? AND status = 'available'`,
+              [saleId, saleItemId, sn]
+            );
+            
+            // Optional: Check if the serial number was actually updated
+            if (updateResult.affectedRows === 0) {
+              throw new Error(`Serial number ${sn} is not available or does not exist.`);
+            }
+          }
+        }
 
         // Deduct from inventory
         await this.updateInventory(connection, product_id, quantity);

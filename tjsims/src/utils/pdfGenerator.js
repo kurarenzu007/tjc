@@ -26,36 +26,13 @@ const bufferToBase64 = (buffer) => {
   return btoa(binary);
 };
 
-// Try to embed a Unicode font so '₱' renders correctly
-const ensureUnicodeFont = async (doc) => {
-  try {
-    const regularRes = await fetch('/fonts/NotoSans-Regular.ttf');
-    if (!regularRes.ok) return false;
-    const regularBuf = await regularRes.arrayBuffer();
-    const regularB64 = bufferToBase64(regularBuf);
-    doc.addFileToVFS('NotoSans-Regular.ttf', regularB64);
-    doc.addFont('NotoSans-Regular.ttf', 'NotoSans', 'normal');
-
-    try {
-      const boldRes = await fetch('/fonts/NotoSans-Bold.ttf');
-      if (boldRes.ok) {
-        const boldBuf = await boldRes.arrayBuffer();
-        const boldB64 = bufferToBase64(boldBuf);
-        doc.addFileToVFS('NotoSans-Bold.ttf', boldB64);
-        doc.addFont('NotoSans-Bold.ttf', 'NotoSans', 'bold');
-      }
-    } catch {}
-
-    return true;
-  } catch {
-    return false;
-  }
-};
+// REVISION: Removed ensureUnicodeFont function as it's no longer needed.
 
 // Utility function to format currency
 const formatCurrency = (amount) => {
   const num = Number(amount) || 0;
-  return `P${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  // REVISION: Always use 'PHP' for reliability in PDF
+  return `PHP ${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 // Utility function to format date
@@ -320,11 +297,10 @@ export const generateSaleReceipt = async ({
   const pageWidth = doc.internal.pageSize.getWidth();
   let y = 40;
 
-  // Use built-in core fonts to avoid unicode font errors
-  const fontLoaded = false;
+  // REVISION: Always use 'PHP '
   const peso = (n) => {
     const v = Number(n) || 0;
-    const sym = fontLoaded ? '₱' : 'PHP ';
+    const sym = 'PHP ';
     return `${sym}${v.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
@@ -365,7 +341,7 @@ export const generateSaleReceipt = async ({
   const colQty = 330;
   const colUnit = 400;
   const colSub = amountRightX;
-  doc.setFont(fontLoaded ? 'NotoSans' : 'helvetica', 'bold');
+  doc.setFont('helvetica', 'bold');
   doc.text('Product', colName, y);
   doc.text('Qty', colQty, y);
   doc.text('Unit', colUnit, y);
@@ -374,7 +350,7 @@ export const generateSaleReceipt = async ({
   doc.setLineWidth(0.5);
   doc.line(marginLeft, y, pageWidth - marginRight, y);
   y += 10;
-  doc.setFont(fontLoaded ? 'NotoSans' : 'helvetica', 'normal');
+  doc.setFont('helvetica', 'normal');
 
   // Items
   items.forEach((it) => {
@@ -392,12 +368,12 @@ export const generateSaleReceipt = async ({
 
   // Totals
   y += 4; doc.line(marginLeft, y, pageWidth - marginRight, y); y += 12;
-  doc.setFont(fontLoaded ? 'NotoSans' : 'helvetica', 'bold');
+  doc.setFont('helvetica', 'bold');
   const labelX = colUnit - 10;
   doc.text('Total:', labelX, y);
   doc.text(peso(totalAmount), colSub, y, { align: 'right' });
   y += 14;
-  doc.setFont(fontLoaded ? 'NotoSans' : 'helvetica', 'normal');
+  doc.setFont('helvetica', 'normal');
   if (paymentMethod.toLowerCase() === 'cash') {
     doc.text('Cash Tendered:', labelX, y);
     doc.text(peso(tenderedAmount), colSub, y, { align: 'right' });

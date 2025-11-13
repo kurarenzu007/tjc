@@ -3,7 +3,8 @@ import Navbar from '../../components/admin/Navbar';
 import { BsSearch, BsPlus, BsPencil, BsBox, BsTags, BsTruck } from 'react-icons/bs';
 import '../../styles/InventoryPage.css';
 import { productAPI } from '../../utils/api';
-import { inventoryAPI } from '../../utils/inventoryApi';
+// REVISION: Changed import path
+import { inventoryAPI } from '../../utils/api'; 
 import { serialNumberAPI } from '../../utils/serialNumberApi';
 
 const InventoryPage = () => {

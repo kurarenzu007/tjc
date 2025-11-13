@@ -277,7 +277,28 @@ export const salesAPI = {
 
 // Inventory API functions
 export const inventoryAPI = {
-  // Get products with inventory information
+  // Get inventory statistics
+  getStats: async () => {
+    const response = await fetch(`${API_BASE_URL}/inventory/stats`, {
+      credentials: 'include'
+    });
+    return handleResponse(response);
+  },
+
+  // Get products with inventory information (from inventoryApi.js)
+  getProducts: async (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.search) params.append('search', filters.search);
+    if (filters.category) params.append('category', filters.category);
+    if (filters.status) params.append('status', filters.status);
+
+    const response = await fetch(`${API_BASE_URL}/inventory/products?${params}`, {
+      credentials: 'include'
+    });
+    return handleResponse(response);
+  },
+
+  // Get products with inventory information (from api.js)
   getProductsWithInventory: async () => {
     const response = await fetch(`${API_BASE_URL}/inventory/products`, {
       credentials: 'include'
@@ -285,26 +306,51 @@ export const inventoryAPI = {
     return handleResponse(response);
   },
 
-  // Get inventory statistics
-  getInventoryStats: async () => {
-    const response = await fetch(`${API_BASE_URL}/inventory/stats`, {
+  // Update product stock (from inventoryApi.js)
+  updateStock: async (productId, data) => {
+    // Check if data is just quantity (old signature)
+    let bodyData = data;
+    if (typeof data === 'number') {
+        console.warn("Using deprecated updateStock signature. Pass an object instead.");
+        bodyData = { quantityToAdd: data };
+    }
+
+    const response = await fetch(`${API_BASE_URL}/inventory/${productId}/stock`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(bodyData),
       credentials: 'include'
     });
     return handleResponse(response);
   },
 
-  // Update product stock
-  updateStock: async (productId, quantity, reorderPoint = null) => {
-    const response = await fetch(`${API_BASE_URL}/inventory/${productId}/stock`, {
-      method: 'PUT',
+  // Bulk stock in for multiple products (from inventoryApi.js)
+  bulkStockIn: async (data) => {
+    const response = await fetch(`${API_BASE_URL}/inventory/bulk-stock-in`, {
+      method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ quantity, reorderPoint }),
+      body: JSON.stringify(data),
       credentials: 'include'
     });
     return handleResponse(response);
   },
+
+  // Return to supplier for multiple products (from inventoryApi.js)
+  returnToSupplier: async (data) => {
+    const response = await fetch(`${API_BASE_URL}/inventory/return-to-supplier`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data),
+      credentials: 'include'
+    });
+    return handleResponse(response);
+  }
 };
 
 // Reports API functions
@@ -330,8 +376,8 @@ export const reportsAPI = {
     // Backend returns { success: true, data: { sales: [], pagination: {}, summary: {} } }
     // Extract the sales array from the response
     return {
-      sales: result.data?.sales || [],
-      pagination: result.data?.pagination || {},
+      sales: result.data?.sales || result.sales || [],
+      pagination: result.data?.pagination || result.pagination || {},
       summary: result.data?.summary || {}
     };
   },
@@ -357,7 +403,7 @@ export const reportsAPI = {
     // Backend returns { success: true, data: { products: [] } }
     // Extract the products array from the response and add pagination info
     return {
-      inventory: result.data?.products || [],
+      inventory: result.data?.products || result.inventory || [],
       pagination: result.data?.pagination || { totalPages: 1, currentPage: 1, totalItems: result.data?.products?.length || 0 },
       summary: result.data?.summary || {}
     };
@@ -404,7 +450,7 @@ export const dashboardAPI = {
     const search = new URLSearchParams();
     if (typeof params === 'string') {
       search.append('period', params);
-    } else if (params && typeof params === 'object') {
+    } else (params && typeof params === 'object') {
       if (params.period) search.append('period', params.period);
       if (params.start_date) search.append('start_date', params.start_date);
       if (params.end_date) search.append('end_date', params.end_date);

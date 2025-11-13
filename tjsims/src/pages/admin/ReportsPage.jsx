@@ -5,6 +5,83 @@ import { reportsAPI } from '../../utils/api';
 import { BsFileEarmarkPdf } from 'react-icons/bs';
 import '../../styles/ReportsPage.css';
 
+// --- NEW COMPONENT: Summary Cards ---
+const ReportSummary = ({ summary, activeTab }) => {
+  // Show loading placeholders if summary is null
+  if (!summary) {
+    return (
+      <div className="reports-stats">
+        <div className="stat-card-placeholder"></div>
+        <div className="stat-card-placeholder"></div>
+        <div className="stat-card-placeholder"></div>
+        {activeTab === 'inventory' && <div className="stat-card-placeholder"></div>}
+      </div>
+    );
+  }
+
+  return (
+    <div className="reports-stats">
+      {activeTab === 'sales' && (
+        <>
+          <div className="stat-card">
+            <h3>Total Revenue</h3>
+            <p className="stat-value revenue">₱{Number(summary.totalRevenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          </div>
+          <div className="stat-card">
+            <h3>Total Sales</h3>
+            <p className="stat-value sales">{summary.totalSales || 0}</p>
+          </div>
+          <div className="stat-card">
+            <h3>Avg. Sale Value</h3>
+            <p className="stat-value avg-sale">₱{Number(summary.averageSale || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          </div>
+        </>
+      )}
+      {activeTab === 'inventory' && (
+        <>
+          <div className="stat-card">
+            <h3>Total Products</h3>
+            <p className="stat-value inventory">{summary.totalProducts || 0}</p>
+          </div>
+          <div className="stat-card">
+            <h3>Total Inventory Value</h3>
+            <p className="stat-value revenue">₱{Number(summary.totalInventoryValue || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          </div>
+          <div className="stat-card">
+            <h3>Out of Stock</h3>
+            <p className="stat-value out-of-stock">{summary.outOfStockProducts || 0}</p>
+          </div>
+          <div className="stat-card">
+            <h3>Low Stock</h3>
+            <p className="stat-value low-stock">{summary.lowStockProducts || 0}</p>
+          </div>
+        </>
+      )}
+      {activeTab === 'returns' && (
+        <>
+          <div className="stat-card">
+            <h3>Total Returns</h3>
+            <p className="stat-value returns">{summary.totalReturns || 0}</p>
+          </div>
+          <div className="stat-card">
+            <h3>Total Refunded</h3>
+            <p className="stat-value revenue">₱{Number(summary.totalRefundAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          </div>
+          <div className="stat-card">
+            <h3>Defective Items</h3>
+            <p className="stat-value out-of-stock">{summary.defectiveReturns || 0}</p>
+          </div>
+          <div className="stat-card">
+            <h3>Items Restocked</h3>
+            <p className="stat-value inventory">{summary.restockedReturns || 0}</p>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+
 const ReportsPage = () => {
   const [activeTab, setActiveTab] = useState('sales');
   const [startDate, setStartDate] = useState('');
@@ -124,9 +201,11 @@ const ReportsPage = () => {
   // API state
   const [salesData, setSalesData] = useState([]);
   const [inventoryData, setInventoryData] = useState([]);
+  const [returnsData, setReturnsData] = useState([]); // --- NEW STATE ---
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({});
+  const [summary, setSummary] = useState(null); // --- NEW STATE ---
 
   // Fetch filter options on mount
   useEffect(() => {
@@ -154,6 +233,7 @@ const ReportsPage = () => {
     try {
       setLoading(true);
       setError(null);
+      setSummary(null); // --- ADDED: Clear summary on each fetch ---
 
       const filters = {
         page: currentPage,
@@ -164,9 +244,10 @@ const ReportsPage = () => {
 
       if (activeTab === 'sales') {
         const result = await reportsAPI.getSalesReport(filters);
-        setSalesData(result.data?.sales || result.sales || []);
-        setPagination(result.data?.pagination || result.pagination || {});
-      } else {
+        setSalesData(result.sales || []);
+        setPagination(result.pagination || {});
+        setSummary(result.summary || null); // --- ADDED: Set summary ---
+      } else if (activeTab === 'inventory') { // --- UPDATED: else if ---
         const inventoryFilters = {
           ...filters,
           ...(stockStatus && stockStatus !== 'All Status' ? { stock_status: stockStatus } : {}),
@@ -174,8 +255,15 @@ const ReportsPage = () => {
           ...(categoryFilter && categoryFilter !== 'All Categories' ? { category: categoryFilter } : {})
         };
         const result = await reportsAPI.getInventoryReport(inventoryFilters);
-        setInventoryData(result.data?.inventory || result.inventory || []);
-        setPagination(result.data?.pagination || result.pagination || {});
+        setInventoryData(result.inventory || []);
+        setPagination(result.pagination || {});
+        setSummary(result.summary || null); // --- ADDED: Set summary ---
+      } else if (activeTab === 'returns') { // --- NEW BLOCK ---
+        const returnsFilters = { ...filters }; // Add any specific filters if needed
+        const result = await reportsAPI.getReturnsReport(returnsFilters);
+        setReturnsData(result.returns || []);
+        setPagination(result.pagination || {});
+        setSummary(result.summary || null); // --- ADDED: Set summary ---
       }
     } catch (err) {
       console.error('Error fetching report data:', err);
@@ -200,10 +288,13 @@ const ReportsPage = () => {
         }))
       );
       return flattenedSales;
-    } else {
+    } else if (activeTab === 'inventory') { // --- UPDATED: else if ---
       // Backend already handles pagination, just return the data
       return inventoryData;
+    } else if (activeTab === 'returns') { // --- NEW BLOCK ---
+      return returnsData;
     }
+    return []; // Default empty
   };
 
   const getTotalItems = () => {
@@ -219,8 +310,7 @@ const ReportsPage = () => {
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
-
-  // REVISION: This entire function is corrected
+  
   const handleExportPDF = async () => {
     try {
       if (!startDate || !endDate) {
@@ -237,7 +327,7 @@ const ReportsPage = () => {
           limit: 999999 // Fetch all
         });
         
-        const salesDataForPDF = allSalesResult.data?.sales || allSalesResult.sales || [];
+        const salesDataForPDF = allSalesResult.sales || [];
         
         if (salesDataForPDF.length === 0) {
           alert('No sales data found for this period.');
@@ -264,7 +354,7 @@ const ReportsPage = () => {
           limit: 999999 // Fetch all
         });
 
-        const inventoryDataForPDF = allInventoryResult.data?.inventory || allInventoryResult.data?.products || allInventoryResult.inventory || [];
+        const inventoryDataForPDF = allInventoryResult.inventory || [];
 
         if (inventoryDataForPDF.length === 0) {
           alert('No inventory data found for these filters.');
@@ -280,6 +370,7 @@ const ReportsPage = () => {
         );
         doc.save(`Inventory_Report_${startDate}_to_${endDate}.pdf`);
       }
+      // --- NO PDF EXPORT FOR RETURNS (YET) ---
     } catch (error) {
       console.error('Error exporting PDF:', error);
       alert('Failed to export PDF: ' + error.message);
@@ -289,6 +380,9 @@ const ReportsPage = () => {
   // Reset to first page when tab changes
   useEffect(() => {
     setCurrentPage(1);
+    // --- ADDED: Clear dates when tab changes ---
+    setStartDate(''); 
+    setEndDate('');
   }, [activeTab]);
 
   return (
@@ -318,61 +412,76 @@ const ReportsPage = () => {
               >
                 Inventory Report
               </button>
+              {/* --- NEW TAB --- */}
+              <button
+                className={`tab-btn ${activeTab === 'returns' ? 'active' : ''}`}
+                onClick={() => setActiveTab('returns')}
+              >
+                Returns Report
+              </button>
             </div>
+
+            {/* --- NEW: Summary Cards --- */}
+            <ReportSummary summary={summary} activeTab={activeTab} />
 
             {/* Controls Section */}
             <div className="reports-controls">
               <div className="filters-row" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                
+                {/* --- UPDATED: Sales Tab Filters --- */}
                 {activeTab === 'sales' && (
-                  <div className="date-input-group">
-                    <label htmlFor="range-label">Range Label</label>
-                    <select id="range-label" value={rangeLabel} onChange={(e)=>handleRangeLabelChange(e.target.value)} className="date-input">
-                      <option>Daily</option>
-                      <option>Weekly</option>
-                      <option>Monthly</option>
-                    </select>
-                  </div>
-                )}
-                <div className="date-input-group">
-                  <label htmlFor="start-date">
-                    {rangeLabel === 'Weekly' ? 'Select Week' : rangeLabel === 'Monthly' ? 'Select Month' : 'From'}
-                  </label>
-                  <input
-                    type={rangeLabel === 'Weekly' ? 'week' : rangeLabel === 'Monthly' ? 'month' : 'date'}
-                    id="start-date"
-                    // REVISION: Use value={startDate} for Daily, otherwise let it be handled by onChange
-                    value={rangeLabel === 'Daily' ? startDate : undefined}
-                    onChange={(e) => handleDateChange(e.target.value, true)}
-                    className="date-input"
-                  />
-                </div>
-                {rangeLabel === 'Daily' && (
-                  <div className="date-input-group">
-                    <label htmlFor="end-date">To</label>
-                    <input
-                      type="date"
-                      id="end-date"
-                      value={endDate}
-                      onChange={(e) => handleDateChange(e.target.value, false)}
-                      className="date-input"
-                    />
-                  </div>
-                )}
-                {rangeLabel !== 'Daily' && startDate && endDate && (
-                  <div className="date-input-group">
-                    <label>Calculated Range</label>
-                    <input
-                      type="text"
-                      value={`${startDate} to ${endDate}`}
-                      readOnly
-                      className="date-input"
-                      style={{ background: '#f5f5f5', cursor: 'not-allowed', minWidth: '280px' }}
-                    />
-                  </div>
-                )}
-                {activeTab === 'inventory' && (
                   <>
-                    {/* REVISION: Added date pickers for inventory tab as well */}
+                    <div className="date-input-group">
+                      <label htmlFor="range-label">Range Label</label>
+                      <select id="range-label" value={rangeLabel} onChange={(e)=>handleRangeLabelChange(e.target.value)} className="date-input">
+                        <option>Daily</option>
+                        <option>Weekly</option>
+                        <option>Monthly</option>
+                      </select>
+                    </div>
+                    <div className="date-input-group">
+                      <label htmlFor="start-date">
+                        {rangeLabel === 'Weekly' ? 'Select Week' : rangeLabel === 'Monthly' ? 'Select Month' : 'From'}
+                      </label>
+                      <input
+                        type={rangeLabel === 'Weekly' ? 'week' : rangeLabel === 'Monthly' ? 'month' : 'date'}
+                        id="start-date"
+                        value={rangeLabel === 'Daily' ? startDate : undefined}
+                        onChange={(e) => handleDateChange(e.target.value, true)}
+                        className="date-input"
+                      />
+                    </div>
+                    {rangeLabel === 'Daily' && (
+                      <div className="date-input-group">
+                        <label htmlFor="end-date">To</label>
+                        <input
+                          type="date"
+                          id="end-date"
+                          value={endDate}
+                          onChange={(e) => handleDateChange(e.target.value, false)}
+                          className="date-input"
+                        />
+                      </div>
+                    )}
+                    {rangeLabel !== 'Daily' && startDate && endDate && (
+                      <div className="date-input-group">
+                        <label>Calculated Range</label>
+                        <input
+                          type="text"
+                          value={`${startDate} to ${endDate}`}
+                          readOnly
+                          className="date-input"
+                          style={{ background: '#f5f5f5', cursor: 'not-allowed', minWidth: '280px' }}
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+                
+                {/* --- UPDATED: Inventory/Returns Tab Filters --- */}
+                {/* Show date pickers for Inventory and Returns tabs */}
+                {activeTab !== 'sales' && (
+                  <>
                     <div className="date-input-group">
                       <label htmlFor="start-date-inv">From</label>
                       <input
@@ -393,7 +502,11 @@ const ReportsPage = () => {
                         className="date-input"
                       />
                     </div>
-                    {/* End of added date pickers */}
+                  </>
+                )}
+
+                {activeTab === 'inventory' && (
+                  <>
                     <div className="date-input-group">
                       <label htmlFor="brand-filter">Brand</label>
                       <select id="brand-filter" value={brandFilter} onChange={(e)=>setBrandFilter(e.target.value)} className="date-input">
@@ -426,7 +539,13 @@ const ReportsPage = () => {
               </div>
 
               <div className="export-buttons">
-                <button onClick={handleExportPDF} className="export-btn pdf-btn">
+                {/* PDF button is disabled for Returns tab for now */}
+                <button 
+                  onClick={handleExportPDF} 
+                  className="export-btn pdf-btn"
+                  disabled={activeTab === 'returns'}
+                  title={activeTab === 'returns' ? 'PDF Export not available for Returns' : 'Export as PDF'}
+                >
                   <BsFileEarmarkPdf className="export-icon" />
                   Export PDF
                 </button>
@@ -437,19 +556,15 @@ const ReportsPage = () => {
             <div className="reports-table-section">
               <div className="table-container">
                 {loading ? (
-                  <div className="loading-state">
-                    <p>Loading report data...</p>
-                  </div>
+                  <div style={{ padding: '40px', textAlign: 'center' }}>Loading report data...</div>
                 ) : error ? (
-                  <div className="error-state">
+                  <div style={{ padding: '40px', textAlign: 'center', color: 'red' }}>
                     <p>{error}</p>
-                    <button onClick={fetchReportData} className="retry-btn">
-                      Retry
-                    </button>
+                    <button onClick={fetchReportData}>Retry</button>
                   </div>
                 ) : getCurrentData().length === 0 ? (
-                  <div className="empty-state">
-                    <p>No data available for the selected period</p>
+                  <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
+                    No data available for the selected period
                   </div>
                 ) : activeTab === 'sales' ? (
                   <table className="reports-table">
@@ -473,12 +588,13 @@ const ReportsPage = () => {
                           <td>{item.quantity}</td>
                           <td className="amount-cell">₱{Number(item.unitPrice || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                           <td className="amount-cell">₱{Number(item.totalPrice || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                          <td>{item.orderDate}</td>
+                          {/* --- FIX: Format the date --- */}
+                          <td>{new Date(item.orderDate).toLocaleDateString()}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                ) : (
+                ) : activeTab === 'inventory' ? (
                   <table className="reports-table">
                     <thead>
                       <tr>
@@ -498,14 +614,43 @@ const ReportsPage = () => {
                           <td className="stock-cell">{item.currentStock}</td>
                           <td>
                             <span
-  className={`stock-status-badge ${(item.stockStatus || '')
-    .toLowerCase()
-    .replace(/\s+/g, '-')}`}
->
-  {item.stockStatus || 'N/A'}
-</span>
-
+                              className={`stock-status-badge ${(item.stockStatus || '')
+                                .toLowerCase()
+                                .replace(/\s+/g, '-')}`}
+                            >
+                              {item.stockStatus || 'N/A'}
+                            </span>
                           </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  // --- NEW TABLE: Returns Report ---
+                  <table className="reports-table">
+                    <thead>
+                      <tr>
+                        <th>Return ID</th>
+                        <th>Order ID</th>
+                        <th>Customer Name</th>
+                        <th>Return Date</th>
+                        <th>Reason</th>
+                        <th>Refund Method</th>
+                        <th>Refund Amount</th>
+                        <th>Restocked</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {getCurrentData().map(item => (
+                        <tr key={item.id}>
+                          <td className="order-id-cell">{item.return_id}</td>
+                          <td>{item.sale_number}</td>
+                          <td>{item.customer_name}</td>
+                          <td>{new Date(item.return_date).toLocaleDateString()}</td>
+                          <td>{item.return_reason}</td>
+                          <td>{item.refund_method}</td>
+                          <td className="amount-cell">₱{Number(item.refund_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                          <td>{item.restocked ? 'Yes' : 'No'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -516,7 +661,7 @@ const ReportsPage = () => {
               {/* Pagination and Results Info */}
               <div className="table-footer">
                 <div className="results-info">
-                  Showing {pagination.from || 0} to {pagination.to || 0} of {getTotalItems()} {activeTab === 'sales' ? 'sales' : 'products'}
+                  Showing {pagination.from || 0} to {pagination.to || 0} of {getTotalItems()} {activeTab}
                 </div>
 
                 {getTotalPages() > 1 && (

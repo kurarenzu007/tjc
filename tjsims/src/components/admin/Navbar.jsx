@@ -4,6 +4,7 @@ import { FaChevronDown } from 'react-icons/fa';
 import { BiUserCircle } from 'react-icons/bi';
 import tcjLogo from '../../assets/tcj_logo.png';
 import { authAPI } from '../../utils/api';
+import '../../styles/Admin.css'; // <-- GLOBAL STYLES IMPORTED HERE
 
 const Navbar = () => {
   const location = useLocation();
@@ -70,8 +71,8 @@ const Navbar = () => {
         <div className="navbar-profile" ref={dropdownRef}>
           <button className="profile-btn" onClick={() => setOpen(!open)}>
             <div className="profile-icon">
-              {(avatarPath && (role === 'admin' || role === 'staff' || role === 'manager')) ? (
-                <img src={"http://localhost:5000"+ avatarPath + `?v=${avatarVersion}`} alt="avatar" style={{ width: 42, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
+              {(avatarPath && (role === 'admin' || role === 'staff' || role ==='manager')) ? (
+                <img src={"http://localhost:5000"+ avatarPath + `?v=${avatarVersion}`} alt="avatar" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
               ) : (
                 <BiUserCircle size={24} />
               )}

@@ -409,6 +409,50 @@ export const reportsAPI = {
     };
   },
 
+  // --- THIS IS THE NEW FUNCTION ---
+  // Get returns report data with pagination and filtering
+  getReturnsReport: async (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.start_date) params.append('startDate', filters.start_date);
+    if (filters.end_date) params.append('endDate', filters.end_date);
+    if (filters.returnReason) params.append('returnReason', filters.returnReason);
+    // Note: The backend /returns route doesn't seem to support pagination yet, so we'll fetch all
+    // if (filters.page) params.append('page', filters.page);
+    // if (filters.limit) params.append('limit', filters.limit);
+
+    const queryString = params.toString();
+    // We will use the existing returns endpoint
+    const url = `${API_BASE_URL}/returns${queryString ? `?${queryString}` : ''}`; 
+
+    const response = await fetch(url, {
+      credentials: 'include'
+    });
+    const result = await handleResponse(response);
+    
+    // We will fetch stats separately
+    const statsResponse = await fetch(`${API_BASE_URL}/returns/stats`, {
+      credentials: 'include'
+    });
+    const statsResult = await handleResponse(statsResponse);
+
+    const returnsData = result.data || [];
+    const total = returnsData.length;
+
+    return {
+      returns: returnsData,
+      // Mock pagination since backend route doesn't provide it
+      pagination: { 
+        total: total, 
+        total_pages: 1, 
+        current_page: 1, 
+        from: 1, 
+        to: total 
+      },
+      summary: statsResult.data || {}
+    };
+  },
+  // --- END OF NEW FUNCTION ---
+
   // Get filter options (brands and categories)
   getFilterOptions: async () => {
     const response = await fetch(`${API_BASE_URL}/reports/filter-options`, {

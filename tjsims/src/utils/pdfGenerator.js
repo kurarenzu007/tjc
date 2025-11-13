@@ -35,6 +35,7 @@ const formatCurrency = (amount) => {
 
 // Utility function to format date
 const formatDate = (dateString) => {
+  if (!dateString) return 'N/A';
   return new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -103,18 +104,19 @@ if (logoDataUrl) {
   doc.text(`Period: ${formatPeriodText(startDate, endDate, rangeLabel)}`, centerX, dateY, { align: 'center' });
 }
 
-  // REVISION: Removed the buggy, redundant filtering block that was here.
-  // The API already filtered the data, so we just use what was given.
+  // API already filtered the data by date, so we just use what was given.
   const filteredOrders = salesData || [];
+
+  // REVISION: Define statuses to include (matching backend)
+  const allowedStatuses = ['Completed', 'Partially Returned', 'Pending', null];
 
   // Flatten the filtered data for table display
   const flattenedData = filteredOrders.flatMap(order =>
-    // REVISION: Filter for only 'Completed' items, as API sends 'Partially Returned' too
-    order.items.filter(item => (order.status ?? 'Completed') === 'Completed').map(item => ({
+    // REVISION: Use the allowedStatuses array
+    order.items.filter(item => allowedStatuses.includes(order.status)).map(item => ({
       orderId: order.orderId,
       customerName: order.customerName,
-      // REVISION: Use the formatted orderDate string directly
-      orderDate: formatDate(order.orderDate),
+      orderDate: formatDate(order.orderDate), // Format the date
       productName: item.productName,
       quantity: Number(item.quantity) || 0,
       unitPrice: Number(item.unitPrice) || 0,
@@ -185,7 +187,6 @@ if (logoDataUrl) {
       ? item.productName.substring(0, maxProductNameLength) + '...'
       : item.productName;
 
-    // REVISION: item.orderDate is already a formatted string
     doc.text(item.orderDate, colPositions.date, yPosition);
     doc.text(productName, colPositions.productName, yPosition);
     doc.text((Number(item.quantity) || 0).toString(), colPositions.quantity, yPosition);
@@ -213,12 +214,14 @@ if (logoDataUrl) {
   yPosition += 15;
 
   // Calculate summary data
-  // REVISION: Filter for 'Completed' status here for accurate summary
-  const completedOrders = filteredOrders.filter(order => (order.status ?? 'Completed') === 'Completed');
+  // REVISION: Update summary to use the same logic
+  const relevantOrders = filteredOrders.filter(order => 
+      allowedStatuses.includes(order.status)
+  );
   
-  const totalRevenue = completedOrders.reduce((sum, order) => sum + (Number(order.totalAmount) || 0), 0);
-  const totalItems = flattenedData.reduce((sum, item) => sum + item.quantity, 0); // Use flattened data (which is already filtered)
-  const totalTransactions = completedOrders.length;
+  const totalRevenue = relevantOrders.reduce((sum, order) => sum + (Number(order.totalAmount) || 0), 0);
+  const totalItems = flattenedData.reduce((sum, item) => sum + item.quantity, 0); // Use flattened data
+  const totalTransactions = relevantOrders.length;
   const avgTransactionValue = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
 
   // Find best selling product from the flattened (and filtered) data
@@ -416,8 +419,8 @@ export const generateInventoryReportPDF = async (inventoryData, startDate, endDa
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  // REVISION: Show "As of" date instead of period for inventory
-  doc.text(`As of ${formatDate(new Date().toISOString())}`, pageWidth / 2, yPosition, { align: 'center' });
+  // REVISION: Use the provided date range for the inventory report title
+  doc.text(`Period: ${formatDate(startDate)} - ${formatDate(endDate)}`, pageWidth / 2, yPosition, { align: 'center' });
   yPosition += 10;
 
   // Table headers

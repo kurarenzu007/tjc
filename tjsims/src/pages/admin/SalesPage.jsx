@@ -10,7 +10,8 @@ const SalesPage = () => {
   const SAVED_CUSTOMERS_KEY = 'sales_saved_customers';
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [cart, setCart] = useState([]);
+  // REVISION: Renamed cart state to saleItems
+  const [saleItems, setSaleItems] = useState([]);
   const [customerType, setCustomerType] = useState('new'); // 'new' or 'existing'
   const [saveCustomerInfo, setSaveCustomerInfo] = useState(false);
   const [lastName, setLastName] = useState('');
@@ -160,13 +161,14 @@ const SalesPage = () => {
     }));
   };
 
-  const addToCart = async (product) => {
+  // REVISION: Renamed function
+  const addToSale = async (product) => {
     const quantity = quantities[product.product_id] || 1;
     const productSerials = selectedSerials[product.product_id] || [];
 
     // Check if product requires serial numbers
     if (product.requires_serial && productSerials.length === 0) {
-      alert('Please select serial numbers for this product before adding to cart');
+      alert('Please select serial numbers for this product before adding to sale');
       return;
     }
 
@@ -183,21 +185,20 @@ const SalesPage = () => {
     }
 
     try {
-      // REVISION: REMOVED inventoryAPI.updateStock call
-
-      const existingItem = cart.find(item => item.product_id === product.product_id);
+      // REVISION: Renamed state variables
+      const existingItem = saleItems.find(item => item.product_id === product.product_id);
 
       if (existingItem) {
-        // Add to existing cart item
+        // Add to existing sale item
         const newSerials = [...(existingItem.serialNumbers || []), ...productSerials];
-        setCart(cart.map(item =>
+        setSaleItems(saleItems.map(item =>
           item.product_id === product.product_id
             ? { ...item, quantity: item.quantity + quantity, serialNumbers: newSerials }
             : item
         ));
       } else {
-        // Add new cart item
-        setCart([...cart, {
+        // Add new sale item
+        setSaleItems([...saleItems, {
           product_id: product.product_id,
           name: product.name,
           brand: product.brand,
@@ -219,14 +220,14 @@ const SalesPage = () => {
         [product.product_id]: 1
       }));
 
-      // REVISION: Update LOCAL state to reflect stock change
+      // Update local state to reflect stock change
       setProducts(products.map(p =>
         p.product_id === product.product_id
           ? { ...p, stock: p.stock - quantity }
           : p
       ));
 
-      // REVISION: Update LOCAL inventory map
+      // Update inventory map
       setInventory(prev => ({
         ...prev,
         [product.product_id]: {
@@ -236,29 +237,30 @@ const SalesPage = () => {
       }));
 
     } catch (error) {
-      console.error('Error adding to cart:', error);
-      alert('Failed to add item to cart. Please try again.');
+      console.error('Error adding to sale:', error);
+      alert('Failed to add item to sale. Please try again.');
     }
   };
 
-  const removeFromCart = async (productId) => {
-    const itemToRemove = cart.find(item => item.product_id === productId);
+  // REVISION: Renamed function
+  const removeFromSale = async (productId) => {
+    // REVISION: Renamed state variable
+    const itemToRemove = saleItems.find(item => item.product_id === productId);
     if (!itemToRemove) return;
 
     try {
-      // REVISION: REMOVED inventoryAPI.updateStock call
+      // Remove from sale
+      // REVISION: Renamed state variable
+      setSaleItems(saleItems.filter(item => item.product_id !== productId));
 
-      // Remove from cart
-      setCart(cart.filter(item => item.product_id !== productId));
-
-      // REVISION: Update LOCAL state to reflect stock change
+      // Update local state to reflect stock change
       setProducts(products.map(p =>
         p.product_id === productId
           ? { ...p, stock: p.stock + itemToRemove.quantity }
           : p
       ));
 
-      // REVISION: Update LOCAL inventory map
+      // Update inventory map
       setInventory(prev => ({
         ...prev,
         [productId]: {
@@ -268,13 +270,15 @@ const SalesPage = () => {
       }));
 
     } catch (error) {
-      console.error('Error removing from cart:', error);
-      alert('Failed to remove item from cart. Please try again.');
+      console.error('Error removing from sale:', error);
+      alert('Failed to remove item from sale. Please try again.');
     }
   };
 
-  const updateCartQuantity = async (productId, change) => {
-    const item = cart.find(item => item.product_id === productId);
+  // REVISION: Renamed function
+  const updateSaleQuantity = async (productId, change) => {
+    // REVISION: Renamed state variable
+    const item = saleItems.find(item => item.product_id === productId);
     if (!item) return;
 
     const newQuantity = Math.max(1, item.quantity + change);
@@ -296,7 +300,6 @@ const SalesPage = () => {
     try {
       // Check stock availability for increases
       if (quantityDifference > 0) {
-        // REVISION: Check against LOCAL inventory
         const currentStock = inventory[productId]?.stock || 0;
         if (currentStock < quantityDifference) {
           alert(`Insufficient stock. Available: ${currentStock}, Needed: ${quantityDifference}`);
@@ -304,23 +307,22 @@ const SalesPage = () => {
         }
       }
 
-      // REVISION: REMOVED inventoryAPI.updateStock call
-
-      // Update cart
-      setCart(cart.map(cartItem =>
-        cartItem.product_id === productId
-          ? { ...cartItem, quantity: newQuantity }
-          : cartItem
+      // Update sale
+      // REVISION: Renamed state variable
+      setSaleItems(saleItems.map(saleItem =>
+        saleItem.product_id === productId
+          ? { ...saleItem, quantity: newQuantity }
+          : saleItem
       ));
 
-      // REVISION: Update LOCAL state to reflect stock change
+      // Update local state to reflect stock change
       setProducts(products.map(p =>
         p.product_id === productId
           ? { ...p, stock: p.stock - quantityDifference }
           : p
       ));
 
-      // REVISION: Update LOCAL inventory map
+      // Update inventory map
       setInventory(prev => ({
         ...prev,
         [productId]: {
@@ -330,7 +332,7 @@ const SalesPage = () => {
       }));
 
     } catch (error) {
-      console.error('Error updating cart quantity:', error);
+      console.error('Error updating sale quantity:', error);
       alert('Failed to update quantity. Please try again.');
     }
   };
@@ -413,20 +415,24 @@ const SalesPage = () => {
     alert('Saved customer removed.');
   };
 
-  const getCartTotal = () => {
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+  // REVISION: Renamed function
+  const getSaleTotal = () => {
+    // REVISION: Renamed state variable
+    return saleItems.reduce((total, item) => total + (item.price * item.quantity), 0);
   };
 
-  const clearCart = async () => {
-    if (cart.length === 0) return;
+  // REVISION: Renamed function
+  const clearSale = async () => {
+    // REVISION: Renamed state variable
+    if (saleItems.length === 0) return;
 
     try {
-      // REVISION: Do not call API. Just revert local state.
-      // Add all stock back for each item in cart LOCALLY
+      // Add all stock back for each item in sale LOCALLY
       let tempProducts = [...products];
       let tempInventory = { ...inventory };
 
-      for (const item of cart) {
+      // REVISION: Renamed state variable
+      for (const item of saleItems) {
         tempProducts = tempProducts.map(p =>
           p.product_id === item.product_id
             ? { ...p, stock: p.stock + item.quantity }
@@ -445,12 +451,13 @@ const SalesPage = () => {
       setProducts(tempProducts);
       setInventory(tempInventory);
 
-      // Clear the cart
-      setCart([]);
+      // Clear the sale
+      // REVISION: Renamed state variable
+      setSaleItems([]);
 
     } catch (error) {
-      console.error('Error clearing cart:', error);
-      alert('Failed to clear cart. Please try again.');
+      console.error('Error clearing sale:', error);
+      alert('Failed to clear sale. Please try again.');
     }
   };
 
@@ -476,19 +483,20 @@ const SalesPage = () => {
       const response = await serialNumberAPI.getAvailableSerials(product.product_id);
       const allAvailableSerials = response.data || [];
       
-      // Get serial numbers already in the cart for this product
-      const cartItem = cart.find(item => item.product_id === product.product_id);
-      const serialsInCart = cartItem?.serialNumbers || [];
+      // Get serial numbers already in the sale for this product
+      // REVISION: Renamed state variable
+      const saleItem = saleItems.find(item => item.product_id === product.product_id);
+      const serialsInSale = saleItem?.serialNumbers || [];
       
-      // Filter out serials that are already in the cart
+      // Filter out serials that are already in the sale
       const filteredSerials = allAvailableSerials.filter(
-        serial => !serialsInCart.includes(serial.serial_number)
+        serial => !serialsInSale.includes(serial.serial_number)
       );
       
       setAvailableSerials(filteredSerials);
       
-      if (filteredSerials.length === 0 && serialsInCart.length > 0) {
-        alert(`All available serial numbers for ${product.name} are already in your cart.`);
+      if (filteredSerials.length === 0 && serialsInSale.length > 0) {
+        alert(`All available serial numbers for ${product.name} are already in your sale.`);
       }
     } catch (error) {
       console.error('Error fetching serial numbers:', error);
@@ -554,8 +562,9 @@ const SalesPage = () => {
   };
 
   const confirmSale = async () => {
-    if (cart.length === 0) {
-      alert('Please add items to cart before confirming sale');
+    // REVISION: Renamed state variable
+    if (saleItems.length === 0) {
+      alert('Please add items to the sale before confirming');
       return;
     }
     if (!paymentOption) {
@@ -567,10 +576,11 @@ const SalesPage = () => {
       alert('Please enter customer last and first name');
       return;
     }
-    const total = getCartTotal();
+    // REVISION: Renamed function
+    const total = getSaleTotal();
     const payAmt = parseFloat(tenderedAmount);
     if (Number.isNaN(payAmt) || payAmt < total) {
-      alert('Customer Payment Amount must be a valid decimal and at least equal to the cart total.');
+      alert('Customer Payment Amount must be a valid decimal and at least equal to the sale total.');
       return;
     }
 
@@ -578,7 +588,8 @@ const SalesPage = () => {
       setSubmitting(true);
 
       // Enforce shipping option rule
-      if (getCartTotal() < 5000 && shippingOption !== 'In-Store Pickup') {
+      // REVISION: Renamed function
+      if (getSaleTotal() < 5000 && shippingOption !== 'In-Store Pickup') {
         setShippingOption('In-Store Pickup');
       }
 
@@ -589,8 +600,9 @@ const SalesPage = () => {
         payment_status: paymentStatus,
         status: orderStatus,
         address: addressDetails ? `${addressDetails}, ${address}` : address,
-        total: getCartTotal(),
-        items: cart.map(item => ({
+        // REVISION: Renamed function and state variable
+        total: getSaleTotal(),
+        items: saleItems.map(item => ({
           product_id: item.product_id,
           product_name: item.name,
           brand: item.brand,
@@ -604,18 +616,19 @@ const SalesPage = () => {
       const saleNo = result?.data?.sale_number || 'N/A';
       const saleId = result?.data?.sale_id;
 
-      // REVISION: REMOVED serialNumberAPI.markAsSold call. This is now handled by the backend.
-
       // Auto-generate and download receipt
       try {
         const doc = await generateSaleReceipt({
           saleNumber: saleNo,
           customerName: fullName,
-          items: cart,
-          totalAmount: getCartTotal(),
+          // REVISION: Renamed state variable
+          items: saleItems,
+          // REVISION: Renamed function
+          totalAmount: getSaleTotal(),
           paymentMethod: paymentOption,
+          // REVISION: Renamed function
           tenderedAmount: parseFloat(tenderedAmount || 0),
-          changeAmount: Math.max(0, parseFloat(tenderedAmount || 0) - getCartTotal()),
+          changeAmount: Math.max(0, parseFloat(tenderedAmount || 0) - getSaleTotal()),
           address: addressDetails ? `${addressDetails}, ${address}` : address,
           shippingOption,
           createdAt: new Date()
@@ -625,25 +638,21 @@ const SalesPage = () => {
         console.error('Failed to generate receipt:', e);
       }
 
-      alert(`Sale confirmed successfully!\nSale Number: ${saleNo}\nTotal: ₱${getCartTotal().toLocaleString()}\nCustomer: ${fullName}`);
+      // REVISION: Renamed function
+      alert(`Sale confirmed successfully!\nSale Number: ${saleNo}\nTotal: ₱${getSaleTotal().toLocaleString()}\nCustomer: ${fullName}`);
       
-      // REVISION: Clear cart (which now only affects local state)
-      // Note: We call clearCart *before* clearCustomerInfo
-      await clearCart(); 
+      // REVISION: Renamed function
+      await clearSale(); 
       clearCustomerInfo();
 
       // Show refresh indicator and refresh inventory data
       setLoading(true);
       await new Promise(resolve => setTimeout(resolve, 500)); // Small delay for visual feedback
       await fetchProductsAndInventory();
-      // setLoading(false); // fetchProductsAndInventory will set this
 
     } catch (error) {
       console.error('Error creating sale:', error);
       alert('Failed to create sale. Please try again.');
-      // REVISION: If sale fails, we must refresh our local state
-      // to get the correct stock levels back from the server
-      // as our local state might be out of sync.
       await fetchProductsAndInventory();
     } finally {
       setSubmitting(false);
@@ -770,13 +779,15 @@ const SalesPage = () => {
                                     Select Serial
                                   </button>
                                 )}
+                                {/* REVISION: Renamed class and function call */}
                                 <button
-                                  onClick={() => addToCart(product)}
+                                  onClick={() => addToSale(product)}
                                   disabled={product.stock === 0}
-                                  className="add-to-cart-btn"
+                                  className="add-to-sale-btn"
                                 >
-                                  <BsCartPlus className="cart-icon" />
-                                  Add to Cart
+                                  {/* REVISION: Renamed class */}
+                                  <BsCartPlus className="sale-icon" />
+                                  Add to Sale
                                 </button>
                               </div>
                             </td>
@@ -791,24 +802,31 @@ const SalesPage = () => {
 
             {/* Right Panel - Shopping Cart & Forms */}
             <div className="right-panel">
-              {/* Shopping Cart Section */}
-              <div className="cart-section">
-                <div className="cart-header">
+              {/* REVISION: Renamed class */}
+              <div className="sale-section">
+                {/* REVISION: Renamed class */}
+                <div className="sale-header">
                   <h2>Current Sale</h2>
                 </div>
 
-                <div className="cart-items">
-                  {cart.length === 0 ? (
-                    <div className="empty-cart">
+                {/* REVISION: Renamed class */}
+                <div className="sale-items">
+                  {/* REVISION: Renamed state variable */}
+                  {saleItems.length === 0 ? (
+                    // REVISION: Renamed class
+                    <div className="empty-sale">
                       <p>No items in current sale.</p>
                     </div>
                   ) : (
                     <>
-                      {cart.map(item => {
+                      {/* REVISION: Renamed state variable */}
+                      {saleItems.map(item => {
                         const hasSerials = item.serialNumbers && item.serialNumbers.length > 0;
                         return (
-                          <div key={item.product_id} className="cart-item">
-                            <div className="cart-item-info">
+                          // REVISION: Renamed class
+                          <div key={item.product_id} className="sale-item">
+                            {/* REVISION: Renamed class */}
+                            <div className="sale-item-info">
                               <h4>{item.name}</h4>
                               <p>{item.brand}</p>
                               <p>₱{item.price.toLocaleString()}</p>
@@ -818,10 +836,12 @@ const SalesPage = () => {
                                 </p>
                               )}
                             </div>
-                            <div className="cart-item-quantity">
+                            {/* REVISION: Renamed class */}
+                            <div className="sale-item-quantity">
                               <div className="quantity-controls">
+                                {/* REVISION: Renamed function call */}
                                 <button
-                                  onClick={() => updateCartQuantity(item.product_id, -1)}
+                                  onClick={() => updateSaleQuantity(item.product_id, -1)}
                                   className="quantity-btn"
                                   disabled={hasSerials}
                                   title={hasSerials ? "Cannot change quantity for items with serial numbers" : "Decrease quantity"}
@@ -831,8 +851,9 @@ const SalesPage = () => {
                                 <span className="quantity-display">
                                   {item.quantity}
                                 </span>
+                                {/* REVISION: Renamed function call */}
                                 <button
-                                  onClick={() => updateCartQuantity(item.product_id, 1)}
+                                  onClick={() => updateSaleQuantity(item.product_id, 1)}
                                   className="quantity-btn"
                                   disabled={hasSerials}
                                   title={hasSerials ? "Cannot change quantity for items with serial numbers" : "Increase quantity"}
@@ -841,21 +862,24 @@ const SalesPage = () => {
                                 </button>
                               </div>
                             </div>
-                            <div className="cart-item-total">
+                            {/* REVISION: Renamed class */}
+                            <div className="sale-item-total">
                               ₱{(item.price * item.quantity).toLocaleString()}
                             </div>
                             <button
-                              onClick={() => removeFromCart(item.product_id)}
+                              // REVISION: Renamed function call
+                              onClick={() => removeFromSale(item.product_id)}
                               className="remove-btn"
-                              title="Remove from cart"
+                              title="Remove from sale"
                             >
                               <BsTrash />
                             </button>
                           </div>
                         );
                       })}
-                      <div className="cart-total">
-                        <strong>Total: ₱{getCartTotal().toLocaleString()}</strong>
+                      {/* REVISION: Renamed class and function call */}
+                      <div className="sale-total">
+                        <strong>Total: ₱{getSaleTotal().toLocaleString()}</strong>
                       </div>
                     </>
                   )}
@@ -1047,8 +1071,8 @@ const SalesPage = () => {
                       className="form-select"
                     >
                       <option value="In-Store Pickup">In-Store Pickup</option>
-                      {/* Enable company delivery only if total >= 5000 */}
-                      {getCartTotal() >= 5000 && (
+                      {/* REVISION: Renamed function */}
+                      {getSaleTotal() >= 5000 && (
                         <option value="Company Delivery">Company Delivery</option>
                       )}
                     </select>
@@ -1086,7 +1110,8 @@ const SalesPage = () => {
                       <input
                         type="text"
                         readOnly
-                        value={`₱${Math.max(0, (parseFloat(tenderedAmount || 0) - getCartTotal())).toLocaleString()}`}
+                        // REVISION: Renamed function
+                        value={`₱${Math.max(0, (parseFloat(tenderedAmount || 0) - getSaleTotal())).toLocaleString()}`}
                         className="form-input readonly"
                       />
                     </div>
@@ -1100,7 +1125,8 @@ const SalesPage = () => {
           {/* Action Buttons - Right Side */}
           <div className="action-buttons-right">
             {(() => {
-              const total = getCartTotal();
+              // REVISION: Renamed function
+              const total = getSaleTotal();
               const payAmt = parseFloat(tenderedAmount);
               var _isPaymentValid = !Number.isNaN(payAmt) && payAmt >= total;
               window.__sales_isPaymentValid = _isPaymentValid; // minimal debug aid
@@ -1108,13 +1134,15 @@ const SalesPage = () => {
             })()}
             <button
               onClick={confirmSale}
-              disabled={submitting || cart.length === 0 || !paymentOption || Number.isNaN(parseFloat(tenderedAmount)) || parseFloat(tenderedAmount) < getCartTotal()}
+              // REVISION: Renamed state variable and function
+              disabled={submitting || saleItems.length === 0 || !paymentOption || Number.isNaN(parseFloat(tenderedAmount)) || parseFloat(tenderedAmount) < getSaleTotal()}
               className="confirm-btn"
             >
               {submitting ? 'Processing...' : 'Confirm Sale'}
             </button>
-            <button onClick={clearCart} className="clear-cart-btn">
-              Clear Cart
+            {/* REVISION: Renamed function, class, and text */}
+            <button onClick={clearSale} className="clear-sale-btn">
+              Clear Sale
             </button>
           </div>
         </div>

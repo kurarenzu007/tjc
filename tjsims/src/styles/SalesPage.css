@@ -227,7 +227,8 @@
   font-weight: 500;
 }
 
-.add-to-cart-btn {
+/* REVISION: Renamed class */
+.add-to-sale-btn {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -241,16 +242,19 @@
   font-weight: 500;
 }
 
-.add-to-cart-btn:hover:not(:disabled) {
+/* REVISION: Renamed class */
+.add-to-sale-btn:hover:not(:disabled) {
   background-color: #0056b3;
 }
 
-.add-to-cart-btn:disabled {
+/* REVISION: Renamed class */
+.add-to-sale-btn:disabled {
   background-color: #6c757d;
   cursor: not-allowed;
 }
 
-.cart-icon {
+/* REVISION: Renamed class */
+.sale-icon {
   font-size: 0.9rem;
 }
 
@@ -353,7 +357,8 @@ lor: #495057;
   border-radius: 4px;
 }
 
-.add-to-cart-btn {
+/* REVISION: Renamed class */
+.add-to-sale-btn {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -370,24 +375,28 @@ lor: #495057;
   white-space: nowrap;
 }
 
-.add-to-cart-btn:hover:not(:disabled) {
+/* REVISION: Renamed class */
+.add-to-sale-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
   background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
 }
 
-.add-to-cart-btn:active:not(:disabled) {
+/* REVISION: Renamed class */
+.add-to-sale-btn:active:not(:disabled) {
   transform: translateY(0);
 }
 
-.add-to-cart-btn:disabled {
+/* REVISION: Renamed class */
+.add-to-sale-btn:disabled {
   background: #6c757d;
   cursor: not-allowed;
   opacity: 0.6;
   box-shadow: none;
 }
 
-.cart-icon {
+/* REVISION: Renamed class */
+.sale-icon {
   font-size: 1rem;
 }
 
@@ -432,8 +441,8 @@ lor: #495057;
   box-shadow: none;
 }
 
-/* Shopping Cart Section - Bigger Size */
-.cart-section {
+/* REVISION: Renamed class */
+.sale-section {
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -443,33 +452,38 @@ lor: #495057;
   flex-direction: column;
 }
 
-.cart-header {
+/* REVISION: Renamed class */
+.sale-header {
   padding: 15px 20px;
   background-color: #f8f9fa;
   border-bottom: 1px solid #e9ecef;
 }
 
-.cart-header h2 {
+/* REVISION: Renamed class */
+.sale-header h2 {
   margin: 0;
   font-size: 1.2rem;
   font-weight: 600;
   color: #333;
 }
 
-.cart-items {
+/* REVISION: Renamed class */
+.sale-items {
   flex: 1;
   overflow-y: auto;
   padding: 0;
   max-height: 350px;
 }
 
-.empty-cart {
+/* REVISION: Renamed class */
+.empty-sale {
   padding: 50px 18px;
   text-align: center;
   color: #6c757d;
 }
 
-.cart-item {
+/* REVISION: Renamed class */
+.sale-item {
   display: flex;
   align-items: center;
   padding: 12px 18px;
@@ -477,33 +491,39 @@ lor: #495057;
   gap: 10px;
 }
 
-.cart-item:last-child {
+/* REVISION: Renamed class */
+.sale-item:last-child {
   border-bottom: none;
 }
 
-.cart-item-info {
+/* REVISION: Renamed class */
+.sale-item-info {
   flex: 1;
 }
 
-.cart-item-info h4 {
+/* REVISION: Renamed class */
+.sale-item-info h4 {
   margin: 0 0 4px 0;
   font-size: 0.9rem;
   font-weight: 600;
   color: #333;
 }
 
-.cart-item-info p {
+/* REVISION: Renamed class */
+.sale-item-info p {
   margin: 0;
   font-size: 0.8rem;
   color: #666;
 }
 
-.cart-item-quantity {
+/* REVISION: Renamed class */
+.sale-item-quantity {
   display: flex;
   align-items: center;
 }
 
-.cart-item-total {
+/* REVISION: Renamed class */
+.sale-item-total {
   font-weight: 600;
   color: #333;
   min-width: 70px;
@@ -523,7 +543,8 @@ lor: #495057;
   background-color: #f8d7da;
 }
 
-.cart-total {
+/* REVISION: Renamed class */
+.sale-total {
   padding: 12px 20px;
   background-color: #f8f9fa;
   border-top: 1px solid #e9ecef;
@@ -532,7 +553,7 @@ lor: #495057;
   font-weight: 600;
 }
 
-/* Right Panel - Container for Cart and Forms */
+/* Right Panel - Container for Sale and Forms */
 .right-panel {
   display: flex;
   flex-direction: column;
@@ -826,7 +847,8 @@ lor: #495057;
   background-color: #0056b3;
 }
 
-.clear-cart-btn {
+/* REVISION: Renamed class */
+.clear-sale-btn {
   background-color: #6c757d;
   color: white;
   border: none;
@@ -838,7 +860,8 @@ lor: #495057;
   min-width: 120px;
 }
 
-.clear-cart-btn:hover {
+/* REVISION: Renamed class */
+.clear-sale-btn:hover {
   background-color: #545b62;
 }
 

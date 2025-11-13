@@ -710,6 +710,8 @@ const SalesPage = () => {
                         <th>Actions</th>
                       </tr>
                     </thead>
+                    {/* REVISION: This entire tbody is corrected to remove the "0" bug
+                        and to use the correct "addToSale" function. */}
                     <tbody>
                       {filteredProducts.map(product => {
                         const productSerials = selectedSerials[product.product_id] || [];
@@ -765,36 +767,33 @@ const SalesPage = () => {
                                 <span style={{ color: '#999', fontSize: '12px' }}>N/A</span>
                               )}
                             </td>
-                            {/* REVISION: This is the corrected "Actions" cell.
-                              It uses `&&` to only show "Select Serial" when needed.
-                              It does NOT have an `else 0` condition.
-                            */}
+                            
+                            {/* THIS IS THE CORRECTED "ACTIONS" CELL */}
                             <td>
                               <div className="action-buttons-cell">
-
-    {/* This part checks if a serial is required.
-        If true, it renders the button.
-        If false, it renders NOTHING (which fixes the "0" bug). */}
-    {product.requires_serial && (
-      <button
-        onClick={() => handleOpenSerialModal(product)}
-        disabled={product.stock === 0}
-        className="select-serial-btn"
-      >
-        Select Serial
-      </button>
-    )}
-
-    {/* This button is separate and will always appear */}
-    <button
-      onClick={() => addToSale(product)}
-      disabled={product.stock === 0}
-      className="add-to-sale-btn"
-    >
-      <BsCartPlus className="sale-icon" />
-      Add to Sale
-    </button>
-  </div>
+                                
+                                {/* This part only renders if 'requires_serial' is true.
+                                    There is no 'else' block, so it will not render "0". */}
+                                {product.requires_serial && (
+                                  <button
+                                    onClick={() => handleOpenSerialModal(product)}
+                                    disabled={product.stock === 0}
+                                    className="select-serial-btn"
+                                  >
+                                    Select Serial
+                                  </button>
+                                )}
+                                
+                                {/* This button renders separately and calls addToSale */}
+                                <button
+                                  onClick={() => addToSale(product)}
+                                  disabled={product.stock === 0}
+                                  className="add-to-sale-btn"
+                                >
+                                  <BsCartPlus className="sale-icon" />
+                                  Add to Sale
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         );

@@ -227,6 +227,7 @@
   font-weight: 500;
 }
 
+/* REVISION: Renamed class */
 .add-to-sale-btn {
   display: flex;
   align-items: center;
@@ -241,15 +242,18 @@
   font-weight: 500;
 }
 
+/* REVISION: Renamed class */
 .add-to-sale-btn:hover:not(:disabled) {
   background-color: #0056b3;
 }
 
+/* REVISION: Renamed class */
 .add-to-sale-btn:disabled {
   background-color: #6c757d;
   cursor: not-allowed;
 }
 
+/* REVISION: Renamed class */
 .sale-icon {
   font-size: 0.9rem;
 }
@@ -285,7 +289,8 @@
   cursor: not-allowed;
 }
 
-/* Shopping Cart Section - Bigger Size */
+
+/* REVISION: Renamed class */
 .sale-section {
   background: white;
   border-radius: 8px;
@@ -296,12 +301,14 @@
   flex-direction: column;
 }
 
+/* REVISION: Renamed class */
 .sale-header {
   padding: 15px 20px;
   background-color: #f8f9fa;
   border-bottom: 1px solid #e9ecef;
 }
 
+/* REVISION: Renamed class */
 .sale-header h2 {
   margin: 0;
   font-size: 1.2rem;
@@ -309,6 +316,7 @@
   color: #333;
 }
 
+/* REVISION: Renamed class */
 .sale-items {
   flex: 1;
   overflow-y: auto;
@@ -316,12 +324,14 @@
   max-height: 350px;
 }
 
+/* REVISION: Renamed class */
 .empty-sale {
   padding: 50px 18px;
   text-align: center;
   color: #6c757d;
 }
 
+/* REVISION: Renamed class */
 .sale-item {
   display: flex;
   align-items: center;
@@ -330,14 +340,17 @@
   gap: 10px;
 }
 
+/* REVISION: Renamed class */
 .sale-item:last-child {
   border-bottom: none;
 }
 
+/* REVISION: Renamed class */
 .sale-item-info {
   flex: 1;
 }
 
+/* REVISION: Renamed class */
 .sale-item-info h4 {
   margin: 0 0 4px 0;
   font-size: 0.9rem;
@@ -345,17 +358,20 @@
   color: #333;
 }
 
+/* REVISION: Renamed class */
 .sale-item-info p {
   margin: 0;
   font-size: 0.8rem;
   color: #666;
 }
 
+/* REVISION: Renamed class */
 .sale-item-quantity {
   display: flex;
   align-items: center;
 }
 
+/* REVISION: Renamed class */
 .sale-item-total {
   font-weight: 600;
   color: #333;
@@ -376,6 +392,7 @@
   background-color: #f8d7da;
 }
 
+/* REVISION: Renamed class */
 .sale-total {
   padding: 12px 20px;
   background-color: #f8f9fa;
@@ -385,7 +402,7 @@
   font-weight: 600;
 }
 
-/* Right Panel - Container for Cart and Forms */
+/* Right Panel - Container for Sale and Forms */
 .right-panel {
   display: flex;
   flex-direction: column;
@@ -679,6 +696,7 @@
   background-color: #0056b3;
 }
 
+/* REVISION: Renamed class */
 .clear-sale-btn {
   background-color: #6c757d;
   color: white;
@@ -691,6 +709,7 @@
   min-width: 120px;
 }
 
+/* REVISION: Renamed class */
 .clear-sale-btn:hover {
   background-color: #545b62;
 }

@@ -10,8 +10,8 @@ import OrderStatus from './pages/client/OrderStatus';
 import DashboardPage from './pages/admin/DashboardPage';
 import SalesPage from './pages/admin/SalesPage';
 import InventoryPage from './pages/admin/InventoryPage';
-// REVISION: Renamed import
-import TransactionHistory from './pages/admin/TransactionHistory';
+// REVISION: Renamed import back to original
+import OrdersPage from './pages/admin/OrdersPage';
 import ReportsPage from './pages/admin/ReportsPage';
 import ProductPage from './pages/admin/ProductPage';
 import SettingsPage from './pages/admin/SettingsPage';
@@ -65,12 +65,12 @@ const App = () => {
             </PrivateRoute>
           } 
         />
-        {/* REVISION: Renamed route and element */}
+        {/* REVISION: Renamed route and element back to original */}
         <Route 
-          path="/admin/transaction-history" 
+          path="/admin/orders" 
           element={
             <PrivateRoute allowedRoles={['admin']}>
-              <TransactionHistory />
+              <OrdersPage />
             </PrivateRoute>
           } 
         />

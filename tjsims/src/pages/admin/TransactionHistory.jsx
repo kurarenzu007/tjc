@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Navbar from '../../components/admin/Navbar';
-import { BsSearch, BsEye, BsPencil, BsArrowReturnLeft, BsFileText } from 'react-icons/bs';
-// REVISION: Import renamed CSS file
-import '../../styles/TransactionHistory.css';
+import { BsSearch, BsEye, BsArrowReturnLeft, BsFileText } from 'react-icons/bs';
+// REVISION: Changed CSS import back to original filename
+import '../../styles/OrdersPage.css'; 
 import { salesAPI, returnsAPI } from '../../utils/api';
 
 // Order Modal Component
@@ -22,54 +22,45 @@ const OrderModal = ({ order, isOpen, onClose, ordersWithItems }) => {
   const isOrderFinal = order.status === 'Completed' || order.status === 'Cancelled' || order.status === 'Returned';
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
+    // REVISION: CSS class name kept as original
+    <div className="order-modal-overlay" onClick={onClose}> 
+      <div className="order-modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="order-modal-header">
           <h2>Transaction Details</h2>
-          <button onClick={onClose} className="close-btn" type="button">×</button>
+          <button onClick={onClose} className="order-modal-close-btn" type="button">×</button>
         </div>
 
-        {/* REVISION: Removed the form wrapper */}
-        <div className="product-form">
-          <div className="form-section">
-            <div className="form-group">
-              <label>Order ID</label>
-              <input type="text" value={order.sale_number} readOnly className="form-input readonly" />
-            </div>
+        {/* REVISION: Removed the form wrapper, this is now just for display */}
+        <div className="order-modal-body">
+          <div className="order-id-section">
+            <h3>{order.sale_number}</h3>
+          </div>
 
-            <div className="form-group">
-              <label>Customer Name</label>
-              <input type="text" value={order.customer_name} readOnly className="form-input readonly" />
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>Payment Status</label>
-                <input type="text" value={order.payment_status || 'Unpaid'} readOnly className="form-input readonly" />
-              </div>
-              <div className="form-group">
-                <label>Order Status</label>
-                <input
-                  type="text"
-                  value={order.status}
-                  readOnly
-                  className={`form-input readonly ${isOrderFinal ? 'final-status' : ''}`}
-                />
+          <div className="order-details-grid">
+            <div className="customer-info-section">
+              <h4>Customer Information</h4>
+              <div className="customer-details">
+                <p><strong>Name:</strong> {order.customer_name}</p>
+                <p><strong>Contact:</strong> {order.contact || 'N/A'}</p>
+                <p><strong>Address:</strong> {order.address || 'N/A'}</p>
               </div>
             </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>Payment Method</label>
-                <input type="text" value={order.payment || ''} readOnly className="form-input readonly" />
+            <div className="delivery-payment-section">
+              <h4>Order & Payment</h4>
+              <div className="delivery-details">
+                <p><strong>Payment:</strong> {order.payment}</p>
+                <p><strong>Pay Status:</strong> {order.payment_status}</p>
+                <p><strong>Order Status:</strong> {order.status}</p>
+                <p><strong>Date:</strong> {new Date(order.created_at).toLocaleString()}</p>
               </div>
             </div>
+          </div>
+          
+          {/* REVISION: Removed the status-edit-section */}
 
-            {/* REVISION: Removed all <select> dropdowns for updating status */}
-
-            <div className="form-section">
-              <h4>Order Items</h4>
-              <div className="items-display">
+          <div className="ordered-items-section">
+            <h4>Ordered Items</h4>
+            <div className="items-display">
                 {saleItems && saleItems.length > 0 ? (
                   <div className="table-responsive">
                     <table className="items-table">
@@ -78,6 +69,7 @@ const OrderModal = ({ order, isOpen, onClose, ordersWithItems }) => {
                           <th>Quantity</th>
                           <th>Product Name</th>
                           <th>Unit Price</th>
+                          <th>Total</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -92,10 +84,13 @@ const OrderModal = ({ order, isOpen, onClose, ordersWithItems }) => {
                             <td className="item-price">
                               <span className="price-text">₱{Number(item.price || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             </td>
+                            <td className="item-price">
+                              <span className="price-text">₱{Number(item.subtotal || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </td>
                           </tr>
                         ))}
                         <tr className="item-total-row">
-                          <td colSpan="2" className="total-label-cell">
+                          <td colSpan="3" className="total-label-cell">
                             <strong>Total</strong>
                           </td>
                           <td className="total-amount-cell">
@@ -108,60 +103,33 @@ const OrderModal = ({ order, isOpen, onClose, ordersWithItems }) => {
                 ) : (
                   <div className="no-items-message">
                     <p>No items found for this order.</p>
-                    <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '8px' }}>
-                      This order may not have any products, or there might be an issue loading the data.
-                    </p>
                   </div>
                 )}
               </div>
-            </div>
-
-            <div className="form-section">
-              <h4>Customer & Delivery Information</h4>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Contact Number</label>
-                  <input type="text" value={order.contact || ''} readOnly className="form-input readonly" />
-                </div>
-                <div className="form-group">
-                  <label>Payment Method</label>
-                  <input type="text" value={order.payment} readOnly className="form-input readonly" />
-                </div>
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Order Date</label>
-                  <input type="text" value={new Date(order.created_at).toLocaleDateString()} readOnly className="form-input readonly" />
-                </div>
-                <div className="form-group">
-                  <label>Items Count</label>
-                  <input type="text" value={saleItems.length} readOnly className="form-input readonly" />
+              
+            {order.delivery_proof && (
+              <div className="form-group" style={{ marginTop: '16px' }}>
+                <label>Proof of Delivery</label>
+                <div style={{ marginTop: '8px' }}>
+                  <img 
+                    src={`http://localhost:5000${order.delivery_proof}`} 
+                    alt="Delivery Proof" 
+                    style={{ 
+                      maxWidth: '100%', 
+                      maxHeight: '400px', 
+                      borderRadius: '8px', 
+                      border: '1px solid #ddd',
+                      display: 'block'
+                    }}
+                  />
                 </div>
               </div>
-              {order.delivery_proof && order.status === 'Completed' && (
-                <div className="form-group" style={{ marginTop: '16px' }}>
-                  <label>Proof of Delivery</label>
-                  <div style={{ marginTop: '8px' }}>
-                    <img 
-                      src={`http://localhost:5000${order.delivery_proof}`} 
-                      alt="Delivery Proof" 
-                      style={{ 
-                        maxWidth: '100%', 
-                        maxHeight: '400px', 
-                        borderRadius: '8px', 
-                        border: '1px solid #ddd',
-                        display: 'block'
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
+            )}
           </div>
 
-          <div className="modal-actions">
+          <div className="order-modal-footer">
             {/* REVISION: Removed Save button, only Close button remains */}
-            <button type="button" onClick={onClose} className="cancel-btn">Close</button>
+            <button type="button" onClick={onClose} className="close-btn">Close</button>
           </div>
         </div>
       </div>
@@ -169,8 +137,8 @@ const OrderModal = ({ order, isOpen, onClose, ordersWithItems }) => {
   );
 };
 
-// REVISION: Renamed component
-const TransactionHistory = () => {
+// REVISION: Renamed component back to original
+const OrdersPage = () => {
   // State for API integration
   const [orders, setOrders] = useState([]);
   const [ordersWithItems, setOrdersWithItems] = useState({});
@@ -349,10 +317,12 @@ const TransactionHistory = () => {
       productName: item.product_name,
       sku: item.sku || '',
       price: parseFloat(item.price || 0),
-      orderedQuantity: parseInt(item.quantity || 0),
+      // REVISION: Calculate remaining quantity available for return
+      orderedQuantity: parseInt(item.quantity || 0) - parseInt(item.returned_quantity || 0),
       returnQuantity: 0,
       selected: false
-    }));
+      // Filter out items that are already fully returned
+    })).filter(item => item.orderedQuantity > 0);
     
     setReturnOrder(order);
     setReturnItems(initReturnItems);
@@ -564,13 +534,7 @@ const TransactionHistory = () => {
     setIsModalOpen(false);
     setSelectedOrder(null);
   };
-
-  // REVISION: This function is now identical to handleViewOrder
-  const handleUpdateOrder = (order) => {
-    setSelectedOrder(order);
-    setIsModalOpen(true);
-  };
-
+  
   // Auto-complete in-store pickup orders
   const autoCompleteInStorePickups = async () => {
     try {
@@ -588,29 +552,6 @@ const TransactionHistory = () => {
       }
     } catch (error) {
       console.error('Error auto-completing in-store pickups:', error);
-    }
-  };
-  
-  // REVISION: This function is no longer used by the modal but kept for safety.
-  const handleSaveChanges = async (orderId, newPaymentMethod, newPaymentStatus, newOrderStatus) => {
-    try {
-      const updateData = {
-        payment: newPaymentMethod,
-        payment_status: newPaymentStatus,
-        status: newOrderStatus
-      };
-
-      const result = await salesAPI.updateSale(orderId, updateData);
-
-      if (result && result.success) {
-        await fetchOrdersWithItems();
-        handleCloseModal();
-      } else {
-        throw new Error('API returned unsuccessful response');
-      }
-    } catch (error) {
-      console.error('Error updating order:', error);
-      alert(`Failed to update order: ${error.message}`);
     }
   };
 
@@ -888,7 +829,7 @@ const TransactionHistory = () => {
                     <tr>
                       <th style={{ width: '50px' }}>Select</th>
                       <th>Product Name</th>
-                      <th style={{ width: '120px' }}>Ordered Qty</th>
+                      <th style={{ width: '120px' }}>Avail. to Return</th>
                       <th style={{ width: '120px' }}>Return Qty</th>
                       <th style={{ width: '120px' }}>Price</th>
                       <th style={{ width: '120px' }}>Subtotal</th>
@@ -1282,5 +1223,5 @@ const TransactionHistory = () => {
   );
 };
 
-// REVISION: Renamed component
-export default TransactionHistory;
+// REVISION: Renamed component export
+export default OrdersPage;

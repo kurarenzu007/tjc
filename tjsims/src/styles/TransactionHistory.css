@@ -481,7 +481,7 @@
 }
 
 /* Order Details Modal Styles */
-.order-modal-overlay {
+.modal-overlay {
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;
@@ -498,7 +498,7 @@
   transform: translateZ(0) !important;
 }
 
-.order-modal-content {
+.modal-content {
   background: white !important;
   border-radius: 12px !important;
   width: 100% !important;
@@ -522,7 +522,7 @@
   }
 }
 
-.order-modal-header {
+.modal-header {
   padding: 20px 25px;
   border-bottom: 1px solid #e9ecef;
   display: flex;
@@ -532,14 +532,14 @@
   border-radius: 12px 12px 0 0;
 }
 
-.order-modal-header h2 {
+.modal-header h2 {
   margin: 0;
   font-size: 1.5rem;
   font-weight: 600;
   color: #333;
 }
 
-.order-modal-close-btn {
+.modal-close-btn {
   background: none;
   border: none;
   font-size: 1.8rem;
@@ -554,12 +554,12 @@
   border-radius: 50%;
 }
 
-.order-modal-close-btn:hover {
+.modal-close-btn:hover {
   background-color: #e9ecef;
   color: #333;
 }
 
-.order-modal-body {
+.modal-body {
   padding: 25px;
 }
 
@@ -843,7 +843,7 @@
   margin-top: 10px;
 }
 
-.order-modal-footer {
+.modal-footer {
   padding: 20px 25px;
   border-top: 1px solid #e9ecef;
   display: flex;
@@ -887,17 +887,17 @@
 
 /* Responsive Design for Modal */
 @media (max-width: 768px) {
-  .order-modal-content {
+  .modal-content {
     margin: 10px;
     max-height: 95vh;
     border-radius: 8px;
   }
 
-  .order-modal-header {
+  .modal-header {
     border-radius: 8px 8px 0 0;
   }
 
-  .order-modal-footer {
+  .modal-footer {
     border-radius: 0 0 8px 8px;
   }
 
@@ -924,7 +924,7 @@
     text-align: center;
   }
 
-  .order-modal-actions {
+  .modal-actions {
     flex-direction: column-reverse;
     gap: 10px;
   }
@@ -1188,7 +1188,7 @@
   font-weight: 700;
 }
 
-/* Order Status Badge Updates for Return Statuses */
+/* REVISION: Added new status colors */
 .order-status-badge.returned {
   background-color: #6c757d;
   color: white;

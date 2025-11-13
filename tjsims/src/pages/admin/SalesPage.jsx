@@ -10,7 +10,6 @@ const SalesPage = () => {
   const SAVED_CUSTOMERS_KEY = 'sales_saved_customers';
 
   const [searchQuery, setSearchQuery] = useState('');
-  // REVISION: Renamed cart state to saleItems
   const [saleItems, setSaleItems] = useState([]);
   const [customerType, setCustomerType] = useState('new'); // 'new' or 'existing'
   const [saveCustomerInfo, setSaveCustomerInfo] = useState(false);
@@ -20,7 +19,10 @@ const SalesPage = () => {
   const [contactNumber, setContactNumber] = useState('');
   const [paymentOption, setPaymentOption] = useState('');
   const [shippingOption, setShippingOption] = useState('In-Store Pickup');
-  const [orderStatus, setOrderStatus] = useState('Pending');
+  
+  // REVISION: This state is no longer needed, it's set dynamically
+  // const [orderStatus, setOrderStatus] = useState('Pending'); 
+  
   const [paymentStatus, setPaymentStatus] = useState('Paid');
   const [address, setAddress] = useState('Manila');
   const [addressDetails, setAddressDetails] = useState('');
@@ -161,7 +163,6 @@ const SalesPage = () => {
     }));
   };
 
-  // REVISION: Renamed function
   const addToSale = async (product) => {
     const quantity = quantities[product.product_id] || 1;
     const productSerials = selectedSerials[product.product_id] || [];
@@ -185,7 +186,6 @@ const SalesPage = () => {
     }
 
     try {
-      // REVISION: Renamed state variables
       const existingItem = saleItems.find(item => item.product_id === product.product_id);
 
       if (existingItem) {
@@ -242,15 +242,12 @@ const SalesPage = () => {
     }
   };
 
-  // REVISION: Renamed function
   const removeFromSale = async (productId) => {
-    // REVISION: Renamed state variable
     const itemToRemove = saleItems.find(item => item.product_id === productId);
     if (!itemToRemove) return;
 
     try {
       // Remove from sale
-      // REVISION: Renamed state variable
       setSaleItems(saleItems.filter(item => item.product_id !== productId));
 
       // Update local state to reflect stock change
@@ -275,9 +272,7 @@ const SalesPage = () => {
     }
   };
 
-  // REVISION: Renamed function
   const updateSaleQuantity = async (productId, change) => {
-    // REVISION: Renamed state variable
     const item = saleItems.find(item => item.product_id === productId);
     if (!item) return;
 
@@ -308,7 +303,6 @@ const SalesPage = () => {
       }
 
       // Update sale
-      // REVISION: Renamed state variable
       setSaleItems(saleItems.map(saleItem =>
         saleItem.product_id === productId
           ? { ...saleItem, quantity: newQuantity }
@@ -415,15 +409,11 @@ const SalesPage = () => {
     alert('Saved customer removed.');
   };
 
-  // REVISION: Renamed function
   const getSaleTotal = () => {
-    // REVISION: Renamed state variable
     return saleItems.reduce((total, item) => total + (item.price * item.quantity), 0);
   };
 
-  // REVISION: Renamed function
   const clearSale = async () => {
-    // REVISION: Renamed state variable
     if (saleItems.length === 0) return;
 
     try {
@@ -431,7 +421,6 @@ const SalesPage = () => {
       let tempProducts = [...products];
       let tempInventory = { ...inventory };
 
-      // REVISION: Renamed state variable
       for (const item of saleItems) {
         tempProducts = tempProducts.map(p =>
           p.product_id === item.product_id
@@ -452,7 +441,6 @@ const SalesPage = () => {
       setInventory(tempInventory);
 
       // Clear the sale
-      // REVISION: Renamed state variable
       setSaleItems([]);
 
     } catch (error) {
@@ -484,7 +472,6 @@ const SalesPage = () => {
       const allAvailableSerials = response.data || [];
       
       // Get serial numbers already in the sale for this product
-      // REVISION: Renamed state variable
       const saleItem = saleItems.find(item => item.product_id === product.product_id);
       const serialsInSale = saleItem?.serialNumbers || [];
       
@@ -562,7 +549,6 @@ const SalesPage = () => {
   };
 
   const confirmSale = async () => {
-    // REVISION: Renamed state variable
     if (saleItems.length === 0) {
       alert('Please add items to the sale before confirming');
       return;
@@ -576,7 +562,6 @@ const SalesPage = () => {
       alert('Please enter customer last and first name');
       return;
     }
-    // REVISION: Renamed function
     const total = getSaleTotal();
     const payAmt = parseFloat(tenderedAmount);
     if (Number.isNaN(payAmt) || payAmt < total) {
@@ -588,19 +573,20 @@ const SalesPage = () => {
       setSubmitting(true);
 
       // Enforce shipping option rule
-      // REVISION: Renamed function
       if (getSaleTotal() < 5000 && shippingOption !== 'In-Store Pickup') {
         setShippingOption('In-Store Pickup');
       }
+      
+      // REVISION: Set status based on shipping option
+      const newOrderStatus = shippingOption === 'In-Store Pickup' ? 'Completed' : 'Processing';
 
       const saleData = {
         customer_name: fullName,
         contact: contactNumber,
         payment: paymentOption,
         payment_status: paymentStatus,
-        status: orderStatus,
+        status: newOrderStatus, // REVISION: Use dynamic status
         address: addressDetails ? `${addressDetails}, ${address}` : address,
-        // REVISION: Renamed function and state variable
         total: getSaleTotal(),
         items: saleItems.map(item => ({
           product_id: item.product_id,
@@ -621,12 +607,9 @@ const SalesPage = () => {
         const doc = await generateSaleReceipt({
           saleNumber: saleNo,
           customerName: fullName,
-          // REVISION: Renamed state variable
           items: saleItems,
-          // REVISION: Renamed function
           totalAmount: getSaleTotal(),
           paymentMethod: paymentOption,
-          // REVISION: Renamed function
           tenderedAmount: parseFloat(tenderedAmount || 0),
           changeAmount: Math.max(0, parseFloat(tenderedAmount || 0) - getSaleTotal()),
           address: addressDetails ? `${addressDetails}, ${address}` : address,
@@ -638,10 +621,8 @@ const SalesPage = () => {
         console.error('Failed to generate receipt:', e);
       }
 
-      // REVISION: Renamed function
       alert(`Sale confirmed successfully!\nSale Number: ${saleNo}\nTotal: ₱${getSaleTotal().toLocaleString()}\nCustomer: ${fullName}`);
       
-      // REVISION: Renamed function
       await clearSale(); 
       clearCustomerInfo();
 
@@ -779,13 +760,11 @@ const SalesPage = () => {
                                     Select Serial
                                   </button>
                                 )}
-                                {/* REVISION: Renamed class and function call */}
                                 <button
                                   onClick={() => addToSale(product)}
                                   disabled={product.stock === 0}
                                   className="add-to-sale-btn"
                                 >
-                                  {/* REVISION: Renamed class */}
                                   <BsCartPlus className="sale-icon" />
                                   Add to Sale
                                 </button>
@@ -802,30 +781,22 @@ const SalesPage = () => {
 
             {/* Right Panel - Shopping Cart & Forms */}
             <div className="right-panel">
-              {/* REVISION: Renamed class */}
               <div className="sale-section">
-                {/* REVISION: Renamed class */}
                 <div className="sale-header">
                   <h2>Current Sale</h2>
                 </div>
 
-                {/* REVISION: Renamed class */}
                 <div className="sale-items">
-                  {/* REVISION: Renamed state variable */}
                   {saleItems.length === 0 ? (
-                    // REVISION: Renamed class
                     <div className="empty-sale">
                       <p>No items in current sale.</p>
                     </div>
                   ) : (
                     <>
-                      {/* REVISION: Renamed state variable */}
                       {saleItems.map(item => {
                         const hasSerials = item.serialNumbers && item.serialNumbers.length > 0;
                         return (
-                          // REVISION: Renamed class
                           <div key={item.product_id} className="sale-item">
-                            {/* REVISION: Renamed class */}
                             <div className="sale-item-info">
                               <h4>{item.name}</h4>
                               <p>{item.brand}</p>
@@ -836,10 +807,8 @@ const SalesPage = () => {
                                 </p>
                               )}
                             </div>
-                            {/* REVISION: Renamed class */}
                             <div className="sale-item-quantity">
                               <div className="quantity-controls">
-                                {/* REVISION: Renamed function call */}
                                 <button
                                   onClick={() => updateSaleQuantity(item.product_id, -1)}
                                   className="quantity-btn"
@@ -851,7 +820,6 @@ const SalesPage = () => {
                                 <span className="quantity-display">
                                   {item.quantity}
                                 </span>
-                                {/* REVISION: Renamed function call */}
                                 <button
                                   onClick={() => updateSaleQuantity(item.product_id, 1)}
                                   className="quantity-btn"
@@ -862,12 +830,10 @@ const SalesPage = () => {
                                 </button>
                               </div>
                             </div>
-                            {/* REVISION: Renamed class */}
                             <div className="sale-item-total">
                               ₱{(item.price * item.quantity).toLocaleString()}
                             </div>
                             <button
-                              // REVISION: Renamed function call
                               onClick={() => removeFromSale(item.product_id)}
                               className="remove-btn"
                               title="Remove from sale"
@@ -877,7 +843,6 @@ const SalesPage = () => {
                           </div>
                         );
                       })}
-                      {/* REVISION: Renamed class and function call */}
                       <div className="sale-total">
                         <strong>Total: ₱{getSaleTotal().toLocaleString()}</strong>
                       </div>
@@ -1071,7 +1036,6 @@ const SalesPage = () => {
                       className="form-select"
                     >
                       <option value="In-Store Pickup">In-Store Pickup</option>
-                      {/* REVISION: Renamed function */}
                       {getSaleTotal() >= 5000 && (
                         <option value="Company Delivery">Company Delivery</option>
                       )}
@@ -1110,7 +1074,6 @@ const SalesPage = () => {
                       <input
                         type="text"
                         readOnly
-                        // REVISION: Renamed function
                         value={`₱${Math.max(0, (parseFloat(tenderedAmount || 0) - getSaleTotal())).toLocaleString()}`}
                         className="form-input readonly"
                       />
@@ -1125,7 +1088,6 @@ const SalesPage = () => {
           {/* Action Buttons - Right Side */}
           <div className="action-buttons-right">
             {(() => {
-              // REVISION: Renamed function
               const total = getSaleTotal();
               const payAmt = parseFloat(tenderedAmount);
               var _isPaymentValid = !Number.isNaN(payAmt) && payAmt >= total;
@@ -1134,13 +1096,11 @@ const SalesPage = () => {
             })()}
             <button
               onClick={confirmSale}
-              // REVISION: Renamed state variable and function
               disabled={submitting || saleItems.length === 0 || !paymentOption || Number.isNaN(parseFloat(tenderedAmount)) || parseFloat(tenderedAmount) < getSaleTotal()}
               className="confirm-btn"
             >
               {submitting ? 'Processing...' : 'Confirm Sale'}
             </button>
-            {/* REVISION: Renamed function, class, and text */}
             <button onClick={clearSale} className="clear-sale-btn">
               Clear Sale
             </button>

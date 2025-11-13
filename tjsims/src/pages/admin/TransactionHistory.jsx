@@ -1,22 +1,16 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Navbar from '../../components/admin/Navbar';
 import { BsSearch, BsEye, BsPencil, BsArrowReturnLeft, BsFileText } from 'react-icons/bs';
-import '../../styles/OrdersPage.css';
+// REVISION: Import renamed CSS file
+import '../../styles/TransactionHistory.css';
 import { salesAPI, returnsAPI } from '../../utils/api';
 
 // Order Modal Component
-const OrderModal = ({ order, isOpen, onClose, onSave, ordersWithItems }) => {
-  const [editPaymentMethod, setEditPaymentMethod] = useState('');
-  const [editPaymentStatus, setEditPaymentStatus] = useState('');
-  const [editOrderStatus, setEditOrderStatus] = useState('');
-  const [saving, setSaving] = useState(false);
+// REVISION: This modal is now for viewing details and cannot change status.
+const OrderModal = ({ order, isOpen, onClose, ordersWithItems }) => {
 
   useEffect(() => {
-    if (order) {
-      setEditPaymentMethod(order.payment || '');
-      setEditPaymentStatus(order.payment_status || 'Unpaid');
-      setEditOrderStatus(order.status || 'Pending');
-    }
+    // No need to set edit state anymore
   }, [order]);
 
   if (!isOpen || !order) return null;
@@ -25,37 +19,18 @@ const OrderModal = ({ order, isOpen, onClose, onSave, ordersWithItems }) => {
   const saleItems = ordersWithItems[order.id] || [];
 
   // Check if order is in a final state (Completed or Cancelled)
-  const isOrderFinal = order.status === 'Completed' || order.status === 'Cancelled';
-  const canUpdateOrder = !isOrderFinal;
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!canUpdateOrder) {
-      alert('Cannot update order - order is already completed or cancelled');
-      return;
-    }
-
-    setSaving(true);
-
-    try {
-      await onSave(order.id, editPaymentMethod, editPaymentStatus, editOrderStatus);
-    } catch (error) {
-      console.error('Error saving order:', error);
-    } finally {
-      setSaving(false);
-    }
-  };
+  const isOrderFinal = order.status === 'Completed' || order.status === 'Cancelled' || order.status === 'Returned';
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Order Details & Status Update</h2>
+          <h2>Transaction Details</h2>
           <button onClick={onClose} className="close-btn" type="button">×</button>
         </div>
 
-        <form onSubmit={handleSubmit} className="product-form">
+        {/* REVISION: Removed the form wrapper */}
+        <div className="product-form">
           <div className="form-section">
             <div className="form-group">
               <label>Order ID</label>
@@ -69,11 +44,11 @@ const OrderModal = ({ order, isOpen, onClose, onSave, ordersWithItems }) => {
 
             <div className="form-row">
               <div className="form-group">
-                <label>Current Payment Status</label>
+                <label>Payment Status</label>
                 <input type="text" value={order.payment_status || 'Unpaid'} readOnly className="form-input readonly" />
               </div>
               <div className="form-group">
-                <label>Current Order Status</label>
+                <label>Order Status</label>
                 <input
                   type="text"
                   value={order.status}
@@ -85,46 +60,12 @@ const OrderModal = ({ order, isOpen, onClose, onSave, ordersWithItems }) => {
 
             <div className="form-row">
               <div className="form-group">
-                <label>Current Payment Method</label>
+                <label>Payment Method</label>
                 <input type="text" value={order.payment || ''} readOnly className="form-input readonly" />
               </div>
             </div>
 
-            {isOrderFinal && (
-              <div className="final-order-notice">
-                <p>⚠️ This order is in a final state ({order.status}) and cannot be modified.</p>
-              </div>
-            )}
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>Update Payment Method</label>
-                <select
-                  value={editPaymentMethod}
-                  onChange={(e) => setEditPaymentMethod(e.target.value)}
-                  className="form-input"
-                  disabled={!canUpdateOrder}
-                >
-                  <option value="Cash">Cash</option>
-                  <option value="GCash">GCash</option>
-                  <option value="Card">Card</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Update Order Status</label>
-                <select
-                  value={editOrderStatus}
-                  onChange={(e) => setEditOrderStatus(e.target.value)}
-                  className="form-input"
-                  disabled={!canUpdateOrder}
-                >
-                  <option value="Pending">Pending</option>
-                  <option value="Processing">Processing</option>
-                  <option value="Completed">Completed</option>
-                  <option value="Cancelled">Cancelled</option>
-                </select>
-              </div>
-            </div>
+            {/* REVISION: Removed all <select> dropdowns for updating status */}
 
             <div className="form-section">
               <h4>Order Items</h4>
@@ -219,22 +160,17 @@ const OrderModal = ({ order, isOpen, onClose, onSave, ordersWithItems }) => {
           </div>
 
           <div className="modal-actions">
-            <button type="button" onClick={onClose} className="cancel-btn">Cancel</button>
-            <button
-              type="submit"
-              className={`confirm-btn ${!canUpdateOrder ? 'disabled' : ''}`}
-              disabled={saving || !canUpdateOrder}
-            >
-              {saving ? 'Saving...' : canUpdateOrder ? 'Save Changes' : 'Order Finalized'}
-            </button>
+            {/* REVISION: Removed Save button, only Close button remains */}
+            <button type="button" onClick={onClose} className="cancel-btn">Close</button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
 };
 
-const OrdersPage = () => {
+// REVISION: Renamed component
+const TransactionHistory = () => {
   // State for API integration
   const [orders, setOrders] = useState([]);
   const [ordersWithItems, setOrdersWithItems] = useState({});
@@ -372,9 +308,12 @@ const OrdersPage = () => {
       'Shipped': 'shipping',
       'Delivered': 'completed',
       'Cancelled': 'canceled',
-      'Pending': 'pending',
+      'Pending': 'pending', // Kept for old data
       'Completed': 'completed',
-      'Canceled': 'canceled'
+      'Canceled': 'canceled',
+      // REVISION: Added new statuses
+      'Returned': 'returned',
+      'Partially Returned': 'partially-returned'
     };
     return statusMap[status] || 'processing';
   };
@@ -393,6 +332,9 @@ const OrdersPage = () => {
     const statusMap = {
       'Paid': 'paid',
       'Unpaid': 'unpaid',
+      // REVISION: Added new statuses
+      'Refunded': 'refunded',
+      'Partially Refunded': 'cash-on-delivery' // Using yellow for this
     };
     return statusMap[status] || 'unknown-status';
   };
@@ -545,11 +487,26 @@ const OrdersPage = () => {
     }
   };
   
-  // Order status options
-  const orderStatuses = ['All Order Status', 'Pending', 'Processing', 'Completed', 'Cancelled', 'Returned', 'Partially Returned'];
+  // REVISION: Added new statuses to the filter list
+  const orderStatuses = [
+    'All Order Status', 
+    'Pending', 
+    'Processing', 
+    'Completed', 
+    'Cancelled', 
+    'Returned', 
+    'Partially Returned'
+  ];
 
   // Payment status options
-  const paymentStatuses = ['All Payment Status', 'Paid', 'Unpaid'];
+  // REVISION: Added new statuses
+  const paymentStatuses = [
+    'All Payment Status', 
+    'Paid', 
+    'Unpaid', 
+    'Refunded', 
+    'Partially Refunded'
+  ];
 
   // Filter orders based on search and status
   const filteredOrders = (orders || []).filter(order => {
@@ -608,7 +565,7 @@ const OrdersPage = () => {
     setSelectedOrder(null);
   };
 
-  // Handle update order (quick update button)
+  // REVISION: This function is now identical to handleViewOrder
   const handleUpdateOrder = (order) => {
     setSelectedOrder(order);
     setIsModalOpen(true);
@@ -617,6 +574,8 @@ const OrdersPage = () => {
   // Auto-complete in-store pickup orders
   const autoCompleteInStorePickups = async () => {
     try {
+      // REVISION: This logic is now handled by SalesPage, but we keep this
+      // to fix any old "Pending" data.
       const allSales = await salesAPI.getSales();
       const inStorePickups = allSales.filter(sale => 
         sale.delivery_type === 'In-store' && 
@@ -632,7 +591,7 @@ const OrdersPage = () => {
     }
   };
   
-  // Handle save changes from modal (update order status)
+  // REVISION: This function is no longer used by the modal but kept for safety.
   const handleSaveChanges = async (orderId, newPaymentMethod, newPaymentStatus, newOrderStatus) => {
     try {
       const updateData = {
@@ -664,8 +623,9 @@ const OrdersPage = () => {
 
             {/* Header Section */}
             <div className="orders-header">
-              <h1 className="orders-title">Order Management</h1>
-              <p className="orders-subtitle">Track and manage customer orders and payments.</p>
+              {/* REVISION: Title changed */}
+              <h1 className="orders-title">Transaction History</h1>
+              <p className="orders-subtitle">Review, filter, and process returns for all transactions.</p>
             </div>
 
             {error && (
@@ -721,21 +681,21 @@ const OrdersPage = () => {
             <div className="orders-stats">
               <div className="orders-stat-card">
                 <div className="stat-info">
-                  <h3>Total Orders</h3>
+                  <h3>Total Transactions</h3>
                   <p className="stat-number total-orders">{stats.totalOrders}</p>
                 </div>
               </div>
 
               <div className="orders-stat-card">
                 <div className="stat-info">
-                  <h3>Pending Orders</h3>
+                  <h3>Delivery Orders</h3>
                   <p className="stat-number pending-orders">{stats.pendingOrders}</p>
                 </div>
               </div>
 
               <div className="orders-stat-card">
                 <div className="stat-info">
-                  <h3>Paid Orders</h3>
+                  <h3>Paid Transactions</h3>
                   <p className="stat-number paid-orders">{stats.paidOrders}</p>
                 </div>
               </div>
@@ -753,7 +713,7 @@ const OrdersPage = () => {
               <div className="table-container">
                 {loading ? (
                   <div className="loading-state">
-                    <p>Loading orders...</p>
+                    <p>Loading transactions...</p>
                   </div>
                 ) : (
                   <table className="orders-table">
@@ -806,19 +766,15 @@ const OrdersPage = () => {
                               <button
                                 onClick={() => handleViewOrder(order)}
                                 className="view-btn"
-                                title="View Order"
+                                title="View Details"
                               >
                                 <BsEye />
                               </button>
-                              <button
-                                onClick={() => handleUpdateOrder(order)}
-                                className="update-btn"
-                                title="Update Order"
-                              >
-                                <BsPencil />
-                              </button>
+                              
+                              {/* REVISION: Removed the edit button <BsPencil /> */}
+                              
                               {/* Show return button only for Completed orders with Paid status */}
-                              {order.status === 'Completed' && order.payment_status === 'Paid' && (
+                              {(order.status === 'Completed' || order.status === 'Partially Returned') && (order.payment_status === 'Paid' || order.payment_status === 'Partially Refunded') && (
                                 <button
                                   onClick={() => handleReturnOrder(order)}
                                   className="return-btn"
@@ -849,7 +805,7 @@ const OrdersPage = () => {
               {/* Pagination and Results Info */}
               <div className="table-footer">
                 <div className="results-info">
-                  Showing {totalFilteredOrders > 0 ? startIndex + 1 : 0} to {Math.min(endIndex, totalFilteredOrders)} of {totalFilteredOrders} orders
+                  Showing {totalFilteredOrders > 0 ? startIndex + 1 : 0} to {Math.min(endIndex, totalFilteredOrders)} of {totalFilteredOrders} transactions
                 </div>
 
                 {totalPages > 1 && (
@@ -891,7 +847,8 @@ const OrdersPage = () => {
         order={selectedOrder}
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        onSave={handleSaveChanges}
+        // REVISION: Removed onSave prop
+        // onSave={handleSaveChanges} 
         ordersWithItems={ordersWithItems}
       />
 
@@ -1325,4 +1282,5 @@ const OrdersPage = () => {
   );
 };
 
-export default OrdersPage;
+// REVISION: Renamed component
+export default TransactionHistory;

@@ -97,6 +97,7 @@
 
 .navbar-nav {
   display: flex;
+  flex-direction: row; /* <-- THIS WAS THE MISSING LINE */
   align-items: center;
   flex-grow: 1;
   height: 100%;
@@ -630,7 +631,7 @@
   align-items: center;
 }
 
-.modal-header h2 {
+.modal-header h2, .modal-header h3 {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 600;

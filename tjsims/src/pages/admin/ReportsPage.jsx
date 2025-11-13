@@ -5,7 +5,7 @@ import { reportsAPI } from '../../utils/api';
 import { BsFileEarmarkPdf } from 'react-icons/bs';
 import '../../styles/ReportsPage.css';
 
-// --- NEW COMPONENT: Summary Cards ---
+// --- Summary Cards Component ---
 const ReportSummary = ({ summary, activeTab }) => {
   // Show loading placeholders if summary is null
   if (!summary) {
@@ -387,15 +387,15 @@ const ReportsPage = () => {
 
   return (
     <>
-      <div className="reports-layout">
+      <div className="admin-layout">
         <Navbar />
-        <main className="reports-main">
-          <div className="reports-container">
+        <main className="admin-main">
+          <div className="admin-container">
 
             {/* Header Section */}
-            <div className="reports-header">
-              <h1 className="reports-title">Reports</h1>
-              <p className="reports-subtitle">Generate and export sales and inventory reports.</p>
+            <div className="page-header">
+              <h1 className="page-title">Reports</h1>
+              <p className="page-subtitle">Generate and export sales and inventory reports.</p>
             </div>
 
             {/* Tab System */}
@@ -425,149 +425,151 @@ const ReportsPage = () => {
             <ReportSummary summary={summary} activeTab={activeTab} />
 
             {/* Controls Section */}
-            <div className="reports-controls">
-              <div className="filters-row" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                
-                {/* --- UPDATED: Sales Tab Filters --- */}
-                {activeTab === 'sales' && (
-                  <>
-                    <div className="date-input-group">
-                      <label htmlFor="range-label">Range Label</label>
-                      <select id="range-label" value={rangeLabel} onChange={(e)=>handleRangeLabelChange(e.target.value)} className="date-input">
-                        <option>Daily</option>
-                        <option>Weekly</option>
-                        <option>Monthly</option>
-                      </select>
-                    </div>
-                    <div className="date-input-group">
-                      <label htmlFor="start-date">
-                        {rangeLabel === 'Weekly' ? 'Select Week' : rangeLabel === 'Monthly' ? 'Select Month' : 'From'}
-                      </label>
-                      <input
-                        type={rangeLabel === 'Weekly' ? 'week' : rangeLabel === 'Monthly' ? 'month' : 'date'}
-                        id="start-date"
-                        value={rangeLabel === 'Daily' ? startDate : undefined}
-                        onChange={(e) => handleDateChange(e.target.value, true)}
-                        className="date-input"
-                      />
-                    </div>
-                    {rangeLabel === 'Daily' && (
+            <div className="card">
+              <div className="reports-controls-inner">
+                <div className="filters-row" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                  
+                  {/* --- UPDATED: Sales Tab Filters --- */}
+                  {activeTab === 'sales' && (
+                    <>
                       <div className="date-input-group">
-                        <label htmlFor="end-date">To</label>
+                        <label htmlFor="range-label">Range Label</label>
+                        <select id="range-label" value={rangeLabel} onChange={(e)=>handleRangeLabelChange(e.target.value)} className="date-input">
+                          <option>Daily</option>
+                          <option>Weekly</option>
+                          <option>Monthly</option>
+                        </select>
+                      </div>
+                      <div className="date-input-group">
+                        <label htmlFor="start-date">
+                          {rangeLabel === 'Weekly' ? 'Select Week' : rangeLabel === 'Monthly' ? 'Select Month' : 'From'}
+                        </label>
+                        <input
+                          type={rangeLabel === 'Weekly' ? 'week' : rangeLabel === 'Monthly' ? 'month' : 'date'}
+                          id="start-date"
+                          value={rangeLabel === 'Daily' ? startDate : undefined}
+                          onChange={(e) => handleDateChange(e.target.value, true)}
+                          className="date-input"
+                        />
+                      </div>
+                      {rangeLabel === 'Daily' && (
+                        <div className="date-input-group">
+                          <label htmlFor="end-date">To</label>
+                          <input
+                            type="date"
+                            id="end-date"
+                            value={endDate}
+                            onChange={(e) => handleDateChange(e.target.value, false)}
+                            className="date-input"
+                          />
+                        </div>
+                      )}
+                      {rangeLabel !== 'Daily' && startDate && endDate && (
+                        <div className="date-input-group">
+                          <label>Calculated Range</label>
+                          <input
+                            type="text"
+                            value={`${startDate} to ${endDate}`}
+                            readOnly
+                            className="date-input"
+                            style={{ background: '#f5f5f5', cursor: 'not-allowed', minWidth: '280px' }}
+                          />
+                        </div>
+                      )}
+                    </>
+                  )}
+                  
+                  {/* --- UPDATED: Inventory/Returns Tab Filters --- */}
+                  {/* Show date pickers for Inventory and Returns tabs */}
+                  {activeTab !== 'sales' && (
+                    <>
+                      <div className="date-input-group">
+                        <label htmlFor="start-date-inv">From</label>
                         <input
                           type="date"
-                          id="end-date"
-                          value={endDate}
-                          onChange={(e) => handleDateChange(e.target.value, false)}
+                          id="start-date-inv"
+                          value={startDate}
+                          onChange={(e) => setStartDate(e.target.value)}
                           className="date-input"
                         />
                       </div>
-                    )}
-                    {rangeLabel !== 'Daily' && startDate && endDate && (
                       <div className="date-input-group">
-                        <label>Calculated Range</label>
+                        <label htmlFor="end-date-inv">To</label>
                         <input
-                          type="text"
-                          value={`${startDate} to ${endDate}`}
-                          readOnly
+                          type="date"
+                          id="end-date-inv"
+                          value={endDate}
+                          onChange={(e) => setEndDate(e.target.value)}
                           className="date-input"
-                          style={{ background: '#f5f5f5', cursor: 'not-allowed', minWidth: '280px' }}
                         />
                       </div>
-                    )}
-                  </>
-                )}
-                
-                {/* --- UPDATED: Inventory/Returns Tab Filters --- */}
-                {/* Show date pickers for Inventory and Returns tabs */}
-                {activeTab !== 'sales' && (
-                  <>
-                    <div className="date-input-group">
-                      <label htmlFor="start-date-inv">From</label>
-                      <input
-                        type="date"
-                        id="start-date-inv"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className="date-input"
-                      />
-                    </div>
-                    <div className="date-input-group">
-                      <label htmlFor="end-date-inv">To</label>
-                      <input
-                        type="date"
-                        id="end-date-inv"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className="date-input"
-                      />
-                    </div>
-                  </>
-                )}
+                    </>
+                  )}
 
-                {activeTab === 'inventory' && (
-                  <>
-                    <div className="date-input-group">
-                      <label htmlFor="brand-filter">Brand</label>
-                      <select id="brand-filter" value={brandFilter} onChange={(e)=>setBrandFilter(e.target.value)} className="date-input">
-                        <option>All Brand</option>
-                        {brands.map(brand => (
-                          <option key={brand} value={brand}>{brand}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="date-input-group">
-                      <label htmlFor="category-filter">Category</label>
-                      <select id="category-filter" value={categoryFilter} onChange={(e)=>setCategoryFilter(e.target.value)} className="date-input">
-                        <option>All Categories</option>
-                        {categories.map(category => (
-                          <option key={category} value={category}>{category}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="date-input-group">
-                      <label htmlFor="stock-status">Stock Status</label>
-                      <select id="stock-status" value={stockStatus} onChange={(e)=>setStockStatus(e.target.value)} className="date-input">
-                        <option>All Status</option>
-                        <option>In Stock</option>
-                        <option>Low Stock</option>
-                        <option>Out of Stock</option>
-                      </select>
-                    </div>
-                  </>
-                )}
-              </div>
+                  {activeTab === 'inventory' && (
+                    <>
+                      <div className="date-input-group">
+                        <label htmlFor="brand-filter">Brand</label>
+                        <select id="brand-filter" value={brandFilter} onChange={(e)=>setBrandFilter(e.target.value)} className="date-input">
+                          <option>All Brand</option>
+                          {brands.map(brand => (
+                            <option key={brand} value={brand}>{brand}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="date-input-group">
+                        <label htmlFor="category-filter">Category</label>
+                        <select id="category-filter" value={categoryFilter} onChange={(e)=>setCategoryFilter(e.target.value)} className="date-input">
+                          <option>All Categories</option>
+                          {categories.map(category => (
+                            <option key={category} value={category}>{category}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="date-input-group">
+                        <label htmlFor="stock-status">Stock Status</label>
+                        <select id="stock-status" value={stockStatus} onChange={(e)=>setStockStatus(e.target.value)} className="date-input">
+                          <option>All Status</option>
+                          <option>In Stock</option>
+                          <option>Low Stock</option>
+                          <option>Out of Stock</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
+                </div>
 
-              <div className="export-buttons">
-                {/* PDF button is disabled for Returns tab for now */}
-                <button 
-                  onClick={handleExportPDF} 
-                  className="export-btn pdf-btn"
-                  disabled={activeTab === 'returns'}
-                  title={activeTab === 'returns' ? 'PDF Export not available for Returns' : 'Export as PDF'}
-                >
-                  <BsFileEarmarkPdf className="export-icon" />
-                  Export PDF
-                </button>
+                <div className="export-buttons">
+                  {/* PDF button is disabled for Returns tab for now */}
+                  <button 
+                    onClick={handleExportPDF} 
+                    className="btn btn-danger"
+                    disabled={activeTab === 'returns'}
+                    title={activeTab === 'returns' ? 'PDF Export not available for Returns' : 'Export as PDF'}
+                  >
+                    <BsFileEarmarkPdf className="export-icon" />
+                    Export PDF
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* Reports Table */}
-            <div className="reports-table-section">
+            <div className="table-section">
               <div className="table-container">
                 {loading ? (
-                  <div style={{ padding: '40px', textAlign: 'center' }}>Loading report data...</div>
+                  <div className="loading-state">Loading report data...</div>
                 ) : error ? (
-                  <div style={{ padding: '40px', textAlign: 'center', color: 'red' }}>
+                  <div className="error-state">
                     <p>{error}</p>
-                    <button onClick={fetchReportData}>Retry</button>
+                    <button onClick={fetchReportData} className="btn btn-danger">Retry</button>
                   </div>
                 ) : getCurrentData().length === 0 ? (
-                  <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
+                  <div className="empty-state">
                     No data available for the selected period
                   </div>
                 ) : activeTab === 'sales' ? (
-                  <table className="reports-table">
+                  <table className="table">
                     <thead>
                       <tr>
                         <th>Order ID</th>
@@ -595,7 +597,7 @@ const ReportsPage = () => {
                     </tbody>
                   </table>
                 ) : activeTab === 'inventory' ? (
-                  <table className="reports-table">
+                  <table className="table">
                     <thead>
                       <tr>
                         <th>Product Name</th>
@@ -614,7 +616,7 @@ const ReportsPage = () => {
                           <td className="stock-cell">{item.currentStock}</td>
                           <td>
                             <span
-                              className={`stock-status-badge ${(item.stockStatus || '')
+                              className={`status-badge ${(item.stockStatus || '')
                                 .toLowerCase()
                                 .replace(/\s+/g, '-')}`}
                             >
@@ -627,7 +629,7 @@ const ReportsPage = () => {
                   </table>
                 ) : (
                   // --- NEW TABLE: Returns Report ---
-                  <table className="reports-table">
+                  <table className="table">
                     <thead>
                       <tr>
                         <th>Return ID</th>

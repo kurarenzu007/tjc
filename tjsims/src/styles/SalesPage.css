@@ -248,3 +248,9 @@
   color: #9ca3af !important;
   font-style: italic;
 }
+
+@media (max-width: 900px) {
+  .sales-content {
+    grid-template-columns: 1fr;
+  }
+}

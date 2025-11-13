@@ -10,7 +10,7 @@ import OrderStatus from './pages/client/OrderStatus';
 import DashboardPage from './pages/admin/DashboardPage';
 import SalesPage from './pages/admin/SalesPage';
 import InventoryPage from './pages/admin/InventoryPage';
-// REVISION: Renamed import back to original
+// REVISION: Import the original file name
 import OrdersPage from './pages/admin/OrdersPage';
 import ReportsPage from './pages/admin/ReportsPage';
 import ProductPage from './pages/admin/ProductPage';
@@ -65,7 +65,7 @@ const App = () => {
             </PrivateRoute>
           } 
         />
-        {/* REVISION: Renamed route and element back to original */}
+        {/* REVISION: Use the original path and element */}
         <Route 
           path="/admin/orders" 
           element={

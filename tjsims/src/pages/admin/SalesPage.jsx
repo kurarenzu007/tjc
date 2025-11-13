@@ -10,6 +10,7 @@ const SalesPage = () => {
   const SAVED_CUSTOMERS_KEY = 'sales_saved_customers';
 
   const [searchQuery, setSearchQuery] = useState('');
+  // REVISION: Renamed cart state to saleItems
   const [saleItems, setSaleItems] = useState([]);
   const [customerType, setCustomerType] = useState('new'); // 'new' or 'existing'
   const [saveCustomerInfo, setSaveCustomerInfo] = useState(false);
@@ -163,6 +164,7 @@ const SalesPage = () => {
     }));
   };
 
+  // REVISION: Renamed function
   const addToSale = async (product) => {
     const quantity = quantities[product.product_id] || 1;
     const productSerials = selectedSerials[product.product_id] || [];
@@ -186,6 +188,7 @@ const SalesPage = () => {
     }
 
     try {
+      // REVISION: Renamed state variables
       const existingItem = saleItems.find(item => item.product_id === product.product_id);
 
       if (existingItem) {
@@ -242,12 +245,15 @@ const SalesPage = () => {
     }
   };
 
+  // REVISION: Renamed function
   const removeFromSale = async (productId) => {
+    // REVISION: Renamed state variable
     const itemToRemove = saleItems.find(item => item.product_id === productId);
     if (!itemToRemove) return;
 
     try {
       // Remove from sale
+      // REVISION: Renamed state variable
       setSaleItems(saleItems.filter(item => item.product_id !== productId));
 
       // Update local state to reflect stock change
@@ -272,7 +278,9 @@ const SalesPage = () => {
     }
   };
 
+  // REVISION: Renamed function
   const updateSaleQuantity = async (productId, change) => {
+    // REVISION: Renamed state variable
     const item = saleItems.find(item => item.product_id === productId);
     if (!item) return;
 
@@ -303,6 +311,7 @@ const SalesPage = () => {
       }
 
       // Update sale
+      // REVISION: Renamed state variable
       setSaleItems(saleItems.map(saleItem =>
         saleItem.product_id === productId
           ? { ...saleItem, quantity: newQuantity }
@@ -409,11 +418,15 @@ const SalesPage = () => {
     alert('Saved customer removed.');
   };
 
+  // REVISION: Renamed function
   const getSaleTotal = () => {
+    // REVISION: Renamed state variable
     return saleItems.reduce((total, item) => total + (item.price * item.quantity), 0);
   };
 
+  // REVISION: Renamed function
   const clearSale = async () => {
+    // REVISION: Renamed state variable
     if (saleItems.length === 0) return;
 
     try {
@@ -421,6 +434,7 @@ const SalesPage = () => {
       let tempProducts = [...products];
       let tempInventory = { ...inventory };
 
+      // REVISION: Renamed state variable
       for (const item of saleItems) {
         tempProducts = tempProducts.map(p =>
           p.product_id === item.product_id
@@ -441,6 +455,7 @@ const SalesPage = () => {
       setInventory(tempInventory);
 
       // Clear the sale
+      // REVISION: Renamed state variable
       setSaleItems([]);
 
     } catch (error) {
@@ -472,6 +487,7 @@ const SalesPage = () => {
       const allAvailableSerials = response.data || [];
       
       // Get serial numbers already in the sale for this product
+      // REVISION: Renamed state variable
       const saleItem = saleItems.find(item => item.product_id === product.product_id);
       const serialsInSale = saleItem?.serialNumbers || [];
       
@@ -749,29 +765,30 @@ const SalesPage = () => {
                                 <span style={{ color: '#999', fontSize: '12px' }}>N/A</span>
                               )}
                             </td>
+                            {/* REVISION: This is the corrected "Actions" cell.
+                              It uses `&&` to only show "Select Serial" when needed.
+                              It does NOT have an `else 0` condition.
+                            */}
                             <td>
                               <div className="action-buttons-cell">
-                        {/* This part only renders the "Select Serial" button IF it's required */}
-                        {product.requires_serial && (
-                          <button
-                            onClick={() => handleOpenSerialModal(product)}
-                            disabled={product.stock === 0}
-                            className="select-serial-btn"
-                          >
-                            Select Serial
-                          </button>
-                        )}
-
-                        {/* This button ALWAYS renders (and there is no "else 0" logic) */}
-                        <button
-                          onClick={() => addToSale(product)}
-                          disabled={product.stock === 0}
-                          className="add-to-sale-btn"
-                        >
-                          <BsCartPlus className="sale-icon" />
-                          Add to Sale
-                        </button>
-                      </div>
+                                {product.requires_serial && (
+                                  <button
+                                    onClick={() => handleOpenSerialModal(product)}
+                                    disabled={product.stock === 0}
+                                    className="select-serial-btn"
+                                  >
+                                    Select Serial
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => addToSale(product)}
+                                  disabled={product.stock === 0}
+                                  className="add-to-sale-btn"
+                                >
+                                  <BsCartPlus className="sale-icon" />
+                                  Add to Sale
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         );

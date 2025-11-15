@@ -54,7 +54,7 @@
 
 .inventory-controls {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-between; /* Change this back */
   align-items: center;
   gap: 20px;
   flex-wrap: wrap;
@@ -65,6 +65,7 @@
   gap: 15px;
   align-items: center;
   flex-wrap: wrap;
+  flex-grow: 1; /* Add this line */
 }
 
 .filter-section {
@@ -72,6 +73,7 @@
   gap: 12px;
   align-items: center;
   flex-wrap: wrap;
+  flex-grow: 1; /* Add this line */
 }
 
 .action-buttons-section {
@@ -94,3 +96,10 @@
   color: var(--color-text-light);
   font-style: italic;
 }
+
+.filter-section .filter-dropdown {
+  width: auto;
+  min-width: 200px;
+  flex-grow: 1; /* Add this line */
+}
+

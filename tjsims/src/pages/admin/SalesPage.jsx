@@ -663,16 +663,20 @@ const SalesPage = () => {
             {/* Products Section */}
             <div className="products-section">
               <div className="products-header">
-                <h2>Product List</h2>
+                <h2>Product Catalog</h2>
+                {/* Use the same search-box as other pages */}
                 <div className="search-box">
-                  <BsSearch className="search-icon" />
                   <input
                     type="text"
-                    placeholder="Search products..."
+                    placeholder="Search Product Name"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="search-input"
                   />
+                  {/* Note: The button is how the yellow icon is added */}
+                  <button className="search-btn" type="button">
+                    <BsSearch />
+                  </button>
                 </div>
               </div>
 
@@ -710,9 +714,7 @@ const SalesPage = () => {
                                 product.stock <= (product.reorder_point || 10) ? 'low-stock' : 
                                 'good-stock'
                               }>
-                                {product.stock === 0 ? 'Out of Stock' :
-                                 product.stock <= (product.reorder_point || 10) ? 'Low Stock' :
-                                 'In Stock'}
+                                {product.stock} {/* <-- This is the only line that changed */}
                               </span>
                             </td>
 

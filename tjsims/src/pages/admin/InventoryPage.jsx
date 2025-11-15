@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../../components/admin/Navbar';
-import { BsSearch, BsPencil } from 'react-icons/bs';
+import { BsSearch, BsPencil, BsArchive, BsCheckCircle, BsExclamationCircle, BsXCircle } from 'react-icons/bs';
 import '../../styles/InventoryPage.css';
 import { inventoryAPI } from '../../utils/api'; 
 import { serialNumberAPI } from '../../utils/serialNumberApi';
+
 
 const InventoryPage = () => {
   function getDefaultReceivedBy() {
@@ -527,7 +528,7 @@ const InventoryPage = () => {
     <div className="admin-layout">
      <Navbar />
       <main className="admin-main">
-        <div className="admin-container">
+        <div className="admin-container inventory-page-content">
      
           {/* Header Section */}
           <div className="page-header">
@@ -595,31 +596,51 @@ const InventoryPage = () => {
 
           {/* Stats Cards */}
           <div className="dashboard-stats">
-            <div className="stat-card">
-              <div className="stat-info">
-                <h3 className="stat-title">Total Products</h3>
-                <p className="stat-value inventory">{inventoryStats.totalProducts}</p>
+            <div className="stat-card inventory">
+              <div className="stat-info-flex">
+                <div> {/* Text Wrapper */}
+                  <h3 className="stat-title">Total Products</h3>
+                  <p className="stat-value inventory">{inventoryStats.totalProducts}</p>
+                </div>
+                <div className="stat-icon inventory"> {/* Icon Wrapper */}
+                  <BsArchive />
+                </div>
               </div>
             </div>
 
-            <div className="stat-card">
-              <div className="stat-info">
-                <h3 className="stat-title">In Stock</h3>
-                <p className="stat-value in-stock">{inventoryStats.inStock}</p>
+            <div className="stat-card in-stock">
+              <div className="stat-info-flex">
+                <div> {/* Text Wrapper */}
+                  <h3 className="stat-title">In Stock</h3>
+                  <p className="stat-value in-stock">{inventoryStats.inStock}</p>
+                </div>
+                <div className="stat-icon in-stock"> {/* Icon Wrapper */}
+                  <BsCheckCircle />
+                </div>
               </div>
             </div>
 
-            <div className="stat-card">
-              <div className="stat-info">
-                <h3 className="stat-title">Low on Stock</h3>
-                <p className="stat-value low-stock">{inventoryStats.lowStock}</p>
+            <div className="stat-card low-stock">
+              <div className="stat-info-flex">
+                <div> {/* Text Wrapper */}
+                  <h3 className="stat-title">Low on Stock</h3>
+                  <p className="stat-value low-stock">{inventoryStats.lowStock}</p>
+                </div>
+                <div className="stat-icon low-stock"> {/* Icon Wrapper */}
+                  <BsExclamationCircle />
+                </div>
               </div>
             </div>
 
-            <div className="stat-card">
-              <div className="stat-info">
-                <h3 className="stat-title">Out of Stock</h3>
-                <p className="stat-value out-of-stock">{inventoryStats.outOfStock}</p>
+            <div className="stat-card out-of-stock">
+              <div className="stat-info-flex">
+                <div> {/* Text Wrapper */}
+                  <h3 className="stat-title">Out of Stock</h3>
+                  <p className="stat-value out-of-stock">{inventoryStats.outOfStock}</p>
+                </div>
+                <div className="stat-icon out-of-stock"> {/* Icon Wrapper */}
+                  <BsXCircle />
+                </div>
               </div>
             </div>
           </div>
@@ -651,7 +672,7 @@ const InventoryPage = () => {
                 <tbody>
                   {currentProducts.map(product => (
                     <tr key={product.id}>
-                      <td>{product.product_id}</td>
+                      <td className="order-id-cell">{product.product_id}</td>
                       <td>
                         <div className="product-info">
                           <h4>{product.name}</h4>

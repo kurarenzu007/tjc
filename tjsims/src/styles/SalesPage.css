@@ -18,19 +18,22 @@
 }
 
 .products-header {
-  display: flex;
-  justify-content: flex-start;
-  gap: 20px;
-  align-items: center;
-  padding: 16px 20px;
+  padding: 16px 20px 5px 20px;
   background-color: #fcfcfd;
   border-bottom: 1px solid var(--color-border);
+}
+
+.products-header .search-box {
+  margin-top: 12px;
+  width: 100%;
+  max-width: 100%; /* Override the max-width from Admin.css */
 }
 
 .products-header h2 {
   margin: 0;
   font-size: 1.2rem;
   font-weight: 600;
+  text-align: left;
 }
 
 .products-table-container { overflow-x: auto; }

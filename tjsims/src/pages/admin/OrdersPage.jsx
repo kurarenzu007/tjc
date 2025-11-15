@@ -445,7 +445,7 @@ const OrdersPage = () => {
       <div className="admin-layout">
         <Navbar />
         <main className="admin-main">
-          <div className="admin-container">
+          <div className="admin-container orders-page-content">
 
             {/* Header Section */}
             <div className="page-header">
@@ -506,28 +506,26 @@ const OrdersPage = () => {
 
             {/* Stats Cards */}
             <div className="dashboard-stats">
-              <div className="stat-card">
+              <div className="stat-card sales"> {/* <-- ADDED CLASS */}
                 <div className="stat-info">
-                  {/* --- FIX: Use total_sales --- */}
                   <h3 className="stat-title">Total Transactions</h3>
                   <p className="stat-value sales">{stats.total_sales}</p>
                 </div>
               </div>
-              <div className="stat-card">
+              <div className="stat-card low-stock"> {/* <-- ADDED CLASS */}
                 <div className="stat-info">
                   <h3 className="stat-title">Pending Orders</h3>
                   <p className="stat-value low-stock">{stats.pendingOrders}</p>
                 </div>
               </div>
-              <div className="stat-card">
+              <div className="stat-card revenue"> {/* <-- ADDED CLASS */}
                 <div className="stat-info">
                   <h3 className="stat-title">Paid Orders</h3>
                   <p className="stat-value revenue">{stats.paidOrders}</p>
                 </div>
               </div>
-              <div className="stat-card">
+              <div className="stat-card inventory"> {/* <-- ADDED CLASS */}
                 <div className="stat-info">
-                  {/* --- FIX: Use total_revenue --- */}
                   <h3 className="stat-title">Total Revenue</h3>
                   <p className="stat-value inventory">₱{Number(stats.total_revenue).toLocaleString()}</p>
                 </div>

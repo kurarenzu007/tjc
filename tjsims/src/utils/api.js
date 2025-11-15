@@ -409,6 +409,31 @@ export const reportsAPI = {
     };
   },
 
+  // Get returns report data with pagination
+  getReturnsReport: async (filters = {}) => {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value) {
+        params.append(key, value);
+      }
+    });
+
+    const queryString = params.toString();
+    const url = `${API_BASE_URL}/reports/returns${queryString ? `?${queryString}` : ''}`;
+
+    const response = await fetch(url, {
+      credentials: 'include'
+    });
+    const result = await handleResponse(response);
+
+    // Backend returns { success: true, data: { returns: [], pagination: {}, summary: {} } }
+    return {
+      returns: result.data?.returns || [],
+      pagination: result.data?.pagination || {},
+      summary: result.data?.summary || {}
+    };
+  },
+
   // Get filter options (brands and categories)
   getFilterOptions: async () => {
     const response = await fetch(`${API_BASE_URL}/reports/filter-options`, {

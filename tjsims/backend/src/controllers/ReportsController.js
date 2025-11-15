@@ -1,5 +1,7 @@
 import { Sales } from '../models/Sales.js';
+import { Return } from '../models/Return.js';
 import { getPool } from '../config/database.js';
+
 
 export class ReportsController {
   // Helper function to convert UTC to Philippine Time (UTC+8)
@@ -301,6 +303,72 @@ export class ReportsController {
       });
     }
   }
+  
+  // Get returns report data with pagination and filtering
+  static async getReturnsReport(req, res) {
+    try {
+      const { page = 1, limit = 10, start_date, end_date, returnReason } = req.query;
+      const offset = (page - 1) * limit;
+
+      const filters = {
+        startDate: start_date,
+        endDate: end_date,
+        returnReason,
+        limit: parseInt(limit),
+        offset: parseInt(offset)
+      };
+
+      // Get paginated returns
+      const returns = await Return.getAllReturns(filters);
+
+      // Get total count for pagination
+      const pool = getPool();
+      let countQuery = "SELECT COUNT(*) as total FROM returns WHERE 1=1";
+      let countParams = [];
+      if (start_date) {
+        countQuery += ' AND return_date >= ?';
+        countParams.push(start_date);
+      }
+      if (end_date) {
+        countQuery += ' AND return_date <= ?';
+        countParams.push(end_date);
+      }
+      if (returnReason) {
+        countQuery += ' AND return_reason = ?';
+        countParams.push(returnReason);
+      }
+
+      const [totalResult] = await pool.execute(countQuery, countParams);
+      const total = totalResult[0].total;
+      const totalPages = Math.ceil(total / limit);
+
+      // Get summary stats
+      const summary = await Return.getReturnStats();
+
+      res.json({
+        success: true,
+        data: {
+          returns: returns,
+          pagination: {
+            current_page: parseInt(page),
+            per_page: parseInt(limit),
+            total: total,
+            total_pages: totalPages,
+            from: offset + 1,
+            to: Math.min(offset + parseInt(limit), total)
+          },
+          summary: summary
+        }
+      });
+
+    } catch (error) {
+      console.error('Error fetching returns report:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch returns report'
+      });
+    }
+  }
 
   // Get filter options (brands and categories)
   static async getFilterOptions(req, res) {
@@ -576,3 +644,5 @@ export class ReportsController {
     }
   }
 }
+
+

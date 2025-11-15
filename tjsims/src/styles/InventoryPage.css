@@ -17,7 +17,7 @@
 .quantity-cell {
   font-weight: 600;
   color: var(--color-text-dark);
-  text-align: center;
+  text-align: left; /* <-- This is the change */
 }
 
 .action-buttons {
@@ -26,16 +26,20 @@
 }
 
 .edit-btn {
-  background-color: var(--color-primary);
-  color: white;
+  background: none;
   border: none;
-  padding: 6px 10px;
-  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 1rem;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary); /* Blue icon color */
 }
 .edit-btn:hover {
-  background-color: var(--color-primary-dark);
+  background-color: #e3f2fd; /* Light blue hover background */
 }
 
 .stock-in-btn {
@@ -65,7 +69,6 @@
   gap: 15px;
   align-items: center;
   flex-wrap: wrap;
-  flex-grow: 1; /* Add this line */
 }
 
 .filter-section {
@@ -73,7 +76,6 @@
   gap: 12px;
   align-items: center;
   flex-wrap: wrap;
-  flex-grow: 1; /* Add this line */
 }
 
 .action-buttons-section {
@@ -99,7 +101,15 @@
 
 .filter-section .filter-dropdown {
   width: auto;
-  min-width: 200px;
-  flex-grow: 1; /* Add this line */
+  min-width: 180px; /* Reduced min-width slightly */
+  flex-grow: 1;     /* <-- ADD THIS LINE */
+  flex-basis: 0;    /* <-- ADD THIS LINE */
 }
 
+/* tjsims/src/styles/InventoryPage.css */
+
+.inventory-page-content .table-section .table td {
+  padding-top: 1px;
+  padding-bottom: 1px;
+  vertical-align: middle;
+}

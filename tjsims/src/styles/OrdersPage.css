@@ -1,6 +1,9 @@
-/* Orders Page Specific Styles */
-/* All layout, table, modal, and form styles are in Admin.css */
 
+.orders-page-content .table-section .table td {
+  padding-top: 22px;
+  padding-bottom: 22px;
+  vertical-align: middle;
+}
 .orders-controls {
   display: flex;
   justify-content: space-between;

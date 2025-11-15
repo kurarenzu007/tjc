@@ -283,11 +283,17 @@
   border-radius: var(--radius-md);
   padding: 20px;
   box-shadow: var(--shadow-md);
-  border-left: 4px solid var(--color-primary);
+  border-left: 4px solid var(--color-primary); /* Default blue */
 }
-.stat-card:nth-child(2) { border-color: var(--color-success); }
-.stat-card:nth-child(3) { border-color: var(--color-warning); }
-.stat-card:nth-child(4) { border-color: var(--color-danger); }
+
+/* Remove the old :nth-child rules and add these specific ones */
+.stat-card.sales { border-color: var(--color-primary); }       /* Blue */
+.stat-card.revenue { border-color: var(--color-success); }     /* Green */
+.stat-card.low-stock { border-color: var(--color-warning); }   /* Orange */
+.stat-card.inventory { border-color: #6f42c1; }             /* Purple */
+.stat-card.in-stock { border-color: var(--color-success); }    /* Green */
+.stat-card.out-of-stock { border-color: var(--color-danger); } /* Red */
+.stat-card.returns { border-color: var(--color-danger); }      /* Red */
 
 .stat-card h3, .stat-info .stat-title {
   margin: 0 0 5px 0;
@@ -311,6 +317,27 @@
 .stat-card .stat-value.out-of-stock { color: var(--color-danger); }
 .stat-card .stat-value.low-stock { color: var(--color-warning); }
 .stat-card .stat-value.returns { color: var(--color-danger); }
+.stat-card .stat-value.in-stock { color: var(--color-success); }
+
+/* --- New styles for Stat Card Icons --- */
+/* --- Fix for Inventory Page Stat Card Icons --- */
+
+.stat-info-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-icon {
+  font-size: 3.2rem; /* Sets icon size to 32px */
+  opacity: 0.7;
+}
+
+/* Match icon colors to your font colors */
+.stat-icon.inventory { color: #6f42c1; }
+.stat-icon.in-stock { color: var(--color-success); }
+.stat-icon.low-stock { color: var(--color-warning); }
+.stat-icon.out-of-stock { color: var(--color-danger); }
 
 /* Dashboard Card */
 .dashboard-card {
@@ -401,25 +428,28 @@
   border-radius: var(--radius-md);
   overflow: hidden;
   max-width: 350px;
+  height: 40px;
 }
 
 .search-input {
   flex: 1;
   border: none;
   outline: none;
-  height: 40px;
+  height: 100%; /* <-- CHANGE from 40px */
   padding: 0 12px;
   font-size: 0.9rem;
+  background: transparent; /* <-- ADD THIS LINE */
 }
 
 .search-btn {
-  height: 40px;
+  height: 100%; /* <-- CHANGE from 40px */
   padding: 0 14px;
   border: none;
   background-color: var(--color-secondary);
   color: var(--color-primary);
   cursor: pointer;
   transition: background-color 0.2s ease;
+  border-radius: 0; /* <-- ADD THIS LINE to prevent weird corner radius */
 }
 .search-btn:hover {
   background-color: var(--color-secondary-dark);

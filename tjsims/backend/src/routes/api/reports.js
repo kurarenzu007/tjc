@@ -12,4 +12,6 @@ router.get('/inventory', ReportsController.getInventoryReport);
 // Get filter options (brands and categories)
 router.get('/filter-options', ReportsController.getFilterOptions);
 
+router.get('/returns', ReportsController.getReturnsReport);
+
 export default router;

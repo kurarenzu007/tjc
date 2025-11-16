@@ -367,16 +367,17 @@
 }
 
 /* Dashboard Card */
+/* ... */
 .dashboard-card {
   background: white;
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg); /* REVISION: Was --shadow-md */
   padding: 24px;
   height: 100%;
   display: flex;
   flex-direction: column;
 }
-
+/* ... */
 /* =================================================================== */
 /* 3. FORMS & CONTROLS */
 /* =================================================================== */
@@ -836,4 +837,72 @@
   min-width: 300px;
   display: flex;
   flex-direction: column;
+}
+
+/* --- Card Tabs (for Dashboard) --- */
+.card-tabs {
+  display: flex;
+  margin-bottom: 20px;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.card-tab-btn {
+  padding: 10px 16px;
+  border: none;
+  background-color: transparent;
+  color: var(--color-text-light);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px; /* Aligns with the parent border */
+}
+
+.card-tab-btn:hover {
+  background-color: var(--color-bg);
+  color: var(--color-text-dark);
+}
+
+.card-tab-btn.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* ... (all existing Admin.css styles) ... */
+
+
+/* 8. CARD HEADER WITH ACTION BUTTON */
+/* This new class creates the flex layout for the title and button */
+.card-header-action {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px; /* Provides space below the header */
+}
+
+/* This makes the h2 inside the new header smaller */
+.card-header-action h2 {
+  margin: 0; /* Remove default margin */
+  font-size: 1.15rem; /* Smaller font size (was 1.25rem) */
+}
+
+/* A new small button variant */
+.btn.btn-small {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Specific style for the small blue outline button */
+.btn-outline.btn-small {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.btn-outline.btn-small:hover {
+  background-color: #e3f2fd; /* Light blue hover */
+  color: var(--color-primary-dark);
 }

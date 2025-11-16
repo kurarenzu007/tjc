@@ -256,13 +256,18 @@ const ProductPage = () => {
           {/* Controls Section */}
           <div className="card">
             
-
+              {/* The filter-section is the flex container */}
               <div className="filter-section">
+                
+                  {/* This div just wraps the button */}
                   <div className="add-product-section">
                     <button className="btn btn-warning" onClick={handleAddProduct}>
                       <BsPlus className="plus-icon" />
                       Add Product
                     </button>
+                  </div> {/* <-- This </div> was moved up */}
+
+                {/* The dropdowns are now direct children of filter-section */}
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
@@ -296,6 +301,7 @@ const ProductPage = () => {
                   ))}
                 </select>
 
+                {/* The search box is also a direct child */}
                 <div className="search-box">
                   <input
                     type="text"
@@ -308,7 +314,7 @@ const ProductPage = () => {
                     <BsSearch className="search-icon" />
                   </button>
                 </div>
-              </div>
+              {/* This </div> now correctly closes filter-section */}
             </div>
           </div>
 

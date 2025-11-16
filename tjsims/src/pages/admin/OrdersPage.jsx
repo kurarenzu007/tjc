@@ -479,27 +479,26 @@ const OrdersPage = () => {
                     </button>
                   </div>
 
-                  <div className="filter-section">
-                    <select
-                      value={selectedOrderStatus}
-                      onChange={(e) => setSelectedOrderStatus(e.target.value)}
-                      className="filter-dropdown"
-                    >
-                      {orderStatuses.map(status => (
-                        <option key={status} value={status}>{status}</option>
-                      ))}
-                    </select>
+                  {/* Dropdowns are now direct children of search-filter-section */}
+                  <select
+                    value={selectedOrderStatus}
+                    onChange={(e) => setSelectedOrderStatus(e.target.value)}
+                    className="filter-dropdown"
+                  >
+                    {orderStatuses.map(status => (
+                      <option key={status} value={status}>{status}</option>
+                    ))}
+                  </select>
 
-                    <select
-                      value={selectedPaymentStatus}
-                      onChange={(e) => setSelectedPaymentStatus(e.target.value)}
-                      className="filter-dropdown"
-                    >
-                      {paymentStatuses.map(status => (
-                        <option key={status} value={status}>{status}</option>
-                      ))}
-                    </select>
-                  </div>
+                  <select
+                    value={selectedPaymentStatus}
+                    onChange={(e) => setSelectedPaymentStatus(e.target.value)}
+                    className="filter-dropdown"
+                  >
+                    {paymentStatuses.map(status => (
+                      <option key={status} value={status}>{status}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>

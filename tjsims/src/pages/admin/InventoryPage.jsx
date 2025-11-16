@@ -553,29 +553,28 @@ const InventoryPage = () => {
                   </button>
                 </div>
 
-                <div className="filter-section">
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="filter-dropdown"
-                  >
-                    <option value="All">All Categories</option>
-                    {Array.from(new Set(products.map(p => p.category))).map(category => (
-                      <option key={category} value={category}>{category}</option>
-                    ))}
-                  </select>
+                {/* Dropdowns are now direct children of search-filter-section */}
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="filter-dropdown"
+                >
+                  <option value="All">All Categories</option>
+                  {Array.from(new Set(products.map(p => p.category))).map(category => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
 
-                  <select
-                    value={selectedStatus}
-                    onChange={(e) => setSelectedStatus(e.target.value)}
-                    className="filter-dropdown"
-                  >
-                    <option value="All">All Status</option>
-                    <option value="In Stock">In Stock</option>
-                    <option value="Low on Stock">Low on Stock</option>
-                    <option value="Out of Stock">Out of Stock</option>
-                  </select>
-                </div>
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="filter-dropdown"
+                >
+                  <option value="All">All Status</option>
+                  <option value="In Stock">In Stock</option>
+                  <option value="Low on Stock">Low on Stock</option>
+                  <option value="Out of Stock">Out of Stock</option>
+                </select>
               </div>
               <div className="action-buttons-section">
                 <button 

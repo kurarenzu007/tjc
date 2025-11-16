@@ -456,6 +456,8 @@
   overflow: hidden;
   max-width: 350px;
   height: 40px;
+  position: relative; /* <-- Add this line */
+  top: 12px;           /* <-- Add this line */
 }
 
 .search-input {

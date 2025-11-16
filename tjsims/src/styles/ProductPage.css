@@ -129,28 +129,31 @@
 
 /* --- New Product Page Control Layout --- */
 
-.product-controls .filter-section {
+/* REMOVED .product-controls from the selector */
+.filter-section {
   display: flex;
   gap: 12px;
   align-items: center;
   width: 100%; /* Make the filter bar take the full width */
+  flex-wrap: wrap; /* ADDED this for responsiveness */
 }
 
 /* Make the dropdowns and search bar share the space */
-.product-controls .filter-section .filter-dropdown {
+/* REMOVED .product-controls from the selector */
+.filter-section .filter-dropdown {
   flex-grow: 1;
   flex-basis: 0;
   min-width: 180px;
 }
 
-.product-controls .filter-section .search-box {
+/* REMOVED .product-controls from the selector */
+.filter-section .search-box {
   flex-grow: 1;
   flex-basis: 0;
   min-width: 200px;
 }
 
-.filter-section .btn {
-  flex-grow: 1;
-  flex-basis: 0;
-  min-width: 150px;
+.filter-section .add-product-section {
+  flex-grow: 0;
+  flex-shrink: 0;
 }

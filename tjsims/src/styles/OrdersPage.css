@@ -18,13 +18,13 @@
   gap: 15px;
   align-items: center;
   flex-wrap: wrap;
+  flex-grow: 1; /* <-- Add this line */
 }
 
-.filter-section {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  flex-wrap: wrap;
+.filter-section .filter-dropdown {
+  flex-grow: 1;
+  flex-basis: 0;
+  min-width: 180px;
 }
 
 .order-id-cell {
@@ -192,3 +192,10 @@
 .receipt-title { text-align: center; margin: 10px 0; font-size: 0.85rem; }
 .receipt-header h3 { font-weight: 700; letter-spacing: 1px; }
 .receipt-info div, .receipt-details div, .receipt-footer div { clear: both; overflow: hidden; }
+
+.search-filter-section .filter-dropdown {
+  flex-grow: 1;
+  flex-basis: 0;
+  min-width: 180px;
+}
+

@@ -2,8 +2,17 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../../components/admin/Navbar';
 import { generateSalesReportPDF, generateInventoryReportPDF } from '../../utils/pdfGenerator';
 import { reportsAPI } from '../../utils/api';
-import { BsFileEarmarkPdf } from 'react-icons/bs';
+import { 
+  BsFileEarmarkPdf, 
+  BsPiggyBank, 
+  BsFileEarmarkText, 
+  BsFillArchiveFill, 
+  BsFillXCircleFill, 
+  BsFillExclamationTriangleFill,
+  BsArrowReturnLeft 
+} from 'react-icons/bs';
 import '../../styles/ReportsPage.css';
+
 
 // --- Summary Cards Component ---
 const ReportSummary = ({ summary, activeTab }) => {
@@ -23,57 +32,134 @@ const ReportSummary = ({ summary, activeTab }) => {
     <div className="reports-stats">
       {activeTab === 'sales' && (
         <>
-          <div className="stat-card">
-            <h3>Total Revenue</h3>
-            <p className="stat-value revenue">₱{Number(summary.totalRevenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          <div className="stat-card revenue">
+            <div className="stat-info-flex">
+              <div>
+                <h3>Total Revenue</h3>
+                <p className="stat-value revenue">₱{Number(summary.totalRevenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              </div>
+              <div className="stat-icon in-stock">
+                <BsPiggyBank />
+              </div>
+            </div>
           </div>
-          <div className="stat-card">
-            <h3>Total Sales</h3>
-            <p className="stat-value sales">{summary.totalSales || 0}</p>
+          <div className="stat-card sales">
+            <div className="stat-info-flex">
+              <div>
+                <h3>Total Sales</h3>
+                <p className="stat-value sales">{summary.totalSales || 0}</p>
+              </div>
+              <div className="stat-icon sales">
+                <BsFileEarmarkText />
+              </div>
+            </div>
           </div>
-          <div className="stat-card">
-            <h3>Avg. Sale Value</h3>
-            <p className="stat-value avg-sale">₱{Number(summary.averageSale || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          <div className="stat-card avg-sale">
+            <div className="stat-info-flex">
+              <div>
+                <h3>Avg. Sale Value</h3>
+                <p className="stat-value avg-sale">₱{Number(summary.averageSale || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              </div>
+              <div className="stat-icon avg-sale">
+                <BsPiggyBank />
+              </div>
+            </div>
           </div>
         </>
       )}
       {activeTab === 'inventory' && (
         <>
-          <div className="stat-card">
-            <h3>Total Products</h3>
-            <p className="stat-value inventory">{summary.totalProducts || 0}</p>
+          <div className="stat-card inventory">
+            <div className="stat-info-flex">
+              <div>
+                <h3>Total Products</h3>
+                <p className="stat-value inventory">{summary.totalProducts || 0}</p>
+              </div>
+              <div className="stat-icon inventory">
+                <BsFillArchiveFill />
+              </div>
+            </div>
           </div>
-          <div className="stat-card">
-            <h3>Total Inventory Value</h3>
-            <p className="stat-value revenue">₱{Number(summary.totalInventoryValue || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          <div className="stat-card revenue">
+            <div className="stat-info-flex">
+              <div>
+                <h3>Total Inventory Value</h3>
+                <p className="stat-value revenue">₱{Number(summary.totalInventoryValue || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              </div>
+              <div className="stat-icon in-stock">
+                <BsPiggyBank />
+              </div>
+            </div>
           </div>
-          <div className="stat-card">
-            <h3>Out of Stock</h3>
-            <p className="stat-value out-of-stock">{summary.outOfStockProducts || 0}</p>
+          <div className="stat-card out-of-stock">
+            <div className="stat-info-flex">
+              <div>
+                <h3>Out of Stock</h3>
+                <p className="stat-value out-of-stock">{summary.outOfStockProducts || 0}</p>
+              </div>
+              <div className="stat-icon out-of-stock">
+                <BsFillXCircleFill />
+              </div>
+            </div>
           </div>
-          <div className="stat-card">
-            <h3>Low Stock</h3>
-            <p className="stat-value low-stock">{summary.lowStockProducts || 0}</p>
+          <div className="stat-card low-stock">
+            <div className="stat-info-flex">
+              <div>
+                <h3>Low Stock</h3>
+                <p className="stat-value low-stock">{summary.lowStockProducts || 0}</p>
+              </div>
+              <div className="stat-icon low-stock">
+                <BsFillExclamationTriangleFill />
+              </div>
+            </div>
           </div>
         </>
       )}
       {activeTab === 'returns' && (
         <>
-          <div className="stat-card">
-            <h3>Total Returns</h3>
-            <p className="stat-value returns">{summary.totalReturns || 0}</p>
+          <div className="stat-card returns">
+            <div className="stat-info-flex">
+              <div>
+                <h3>Total Returns</h3>
+                <p className="stat-value returns">{summary.totalReturns || 0}</p>
+              </div>
+              <div className="stat-icon returns">
+                <BsArrowReturnLeft />
+              </div>
+            </div>
           </div>
-          <div className="stat-card">
-            <h3>Total Refunded</h3>
-            <p className="stat-value revenue">₱{Number(summary.totalRefundAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          <div className="stat-card revenue out-of-stock"> {/* Use out-of-stock for red color */}
+            <div className="stat-info-flex">
+              <div>
+                <h3>Total Refunded</h3>
+                <p className="stat-value revenue out-of-stock">₱{Number(summary.totalRefundAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              </div>
+              <div className="stat-icon out-of-stock">
+                <BsPiggyBank />
+              </div>
+            </div>
           </div>
-          <div className="stat-card">
-            <h3>Defective Items</h3>
-            <p className="stat-value out-of-stock">{summary.defectiveReturns || 0}</p>
+          <div className="stat-card out-of-stock">
+            <div className="stat-info-flex">
+              <div>
+                <h3>Defective Items</h3>
+                <p className="stat-value out-of-stock">{summary.defectiveReturns || 0}</p>
+              </div>
+              <div className="stat-icon out-of-stock">
+                <BsFillXCircleFill />
+              </div>
+            </div>
           </div>
-          <div className="stat-card">
-            <h3>Items Restocked</h3>
-            <p className="stat-value inventory">{summary.restockedReturns || 0}</p>
+          <div className="stat-card inventory">
+            <div className="stat-info-flex">
+              <div>
+                <h3>Items Restocked</h3>
+                <p className="stat-value inventory">{summary.restockedReturns || 0}</p>
+              </div>
+              <div className="stat-icon inventory">
+                <BsFillArchiveFill />
+              </div>
+            </div>
           </div>
         </>
       )}

@@ -157,3 +157,19 @@
   flex-grow: 0;
   flex-shrink: 0;
 }
+
+/* --- Styles for disabled toggle --- */
+.toggle-switch input:disabled + .toggle-label {
+  cursor: not-allowed;
+  opacity: 0.7; /* Make it look faded/disabled */
+}
+
+/* Make the slider gray even if checked */
+.toggle-switch input:disabled:checked + .toggle-label .toggle-slider {
+  background-color: #bdc3c7; /* A neutral gray */
+}
+
+/* Make the "knob" gray as well */
+.toggle-switch input:disabled + .toggle-label .toggle-slider:before {
+  background-color: #f0f0f0;
+}

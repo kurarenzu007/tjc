@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { BsCartPlus, BsTrash, BsSearch } from 'react-icons/bs';
 import Navbar from '../../components/admin/Navbar';
 import '../../styles/SalesPage.css';
@@ -40,6 +40,12 @@ const SalesPage = () => {
     }
   });
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
+
+  // --- NEW STATE ---
+  // Add state for the customer search input
+  const [customerSearch, setCustomerSearch] = useState('');
+  // Add state to show/hide the customer results dropdown
+  const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
 
   // New state for API integration
   const [products, setProducts] = useState([]);
@@ -347,17 +353,52 @@ const SalesPage = () => {
     setAddressDetails(customer.addressDetails || '');
   };
 
-  const handleSelectCustomer = (customerId) => {
-    setSelectedCustomerId(customerId);
-    if (!customerId) {
-      return;
+  // --- MODIFIED: handleSelectCustomer ---
+  // This function is now called when a user CLICKS an item from the new dropdown.
+  // It receives the full customer object instead of just an ID.
+  const handleSelectCustomer = (customer) => {
+    setSelectedCustomerId(customer.id);
+    fillCustomerFields(customer); // This fills the form fields
+    // Set the input text to the selected customer's name and close the dropdown
+    setCustomerSearch(`${customer.lastName}, ${customer.firstName} - ${customer.contactNumber}`);
+    setIsCustomerDropdownOpen(false);
+  };
+
+  // --- NEW: handleCustomerSearchChange ---
+  // This function runs every time the user types in the new customer search box
+  const handleCustomerSearchChange = (e) => {
+    const value = e.target.value;
+    setCustomerSearch(value);
+    setIsCustomerDropdownOpen(true); // Open the dropdown as they type
+    
+    // If the user is typing, it means they haven't selected a customer yet,
+    // so we should clear any previously selected customer ID.
+    if (selectedCustomerId) {
+      setSelectedCustomerId('');
+      // Optionally clear other fields
+      setAddress('Manila');
+      setAddressDetails('');
+    }
+  }
+
+  // --- NEW: filteredSavedCustomers ---
+  // This uses useMemo to create a filtered list of customers based on the search input
+  const filteredSavedCustomers = useMemo(() => {
+    const searchLower = customerSearch.toLowerCase();
+
+    // If the search bar is empty, show all customers
+    if (!searchLower) {
+      return savedCustomers;
     }
 
-    const customer = savedCustomers.find(item => item.id === customerId);
-    if (customer) {
-      fillCustomerFields(customer);
-    }
-  };
+    // Otherwise, filter by name or contact number
+    return savedCustomers.filter(c =>
+      c.lastName.toLowerCase().includes(searchLower) ||
+      c.firstName.toLowerCase().includes(searchLower) ||
+      c.contactNumber.includes(searchLower)
+    );
+  }, [customerSearch, savedCustomers]);
+
 
   const handleSaveCustomer = () => {
     const normalizedLastName = lastName.trim();
@@ -456,6 +497,8 @@ const SalesPage = () => {
     }
   };
 
+  // --- MODIFIED: clearCustomerInfo ---
+  // We need to also clear the new customerSearch state
   const clearCustomerInfo = () => {
     setLastName('');
     setFirstName('');
@@ -466,6 +509,7 @@ const SalesPage = () => {
     setTenderedAmount('');
     setGcashRef('');
     setSelectedCustomerId('');
+    setCustomerSearch(''); // <-- ADD THIS LINE
     setPaymentOption('');
   };
 
@@ -925,23 +969,38 @@ const SalesPage = () => {
 
                 {/* Existing Customer Selection */}
                 {customerType === 'existing' && (
-                  <div className="form-group">
+                  <div className="form-group" style={{ position: 'relative' }}>
                     <label>Select Customer:</label>
-                    <select
-                      value={selectedCustomerId}
-                      onChange={(e) => handleSelectCustomer(e.target.value)}
-                      className="form-select"
+                    <input
+                      type="text"
+                      value={customerSearch}
+                      onChange={handleCustomerSearchChange}
+                      onFocus={() => setIsCustomerDropdownOpen(true)}
+                      onBlur={() => setTimeout(() => setIsCustomerDropdownOpen(false), 200)} // 200ms delay to allow click
+                      placeholder={savedCustomers.length === 0 ? 'No saved customers' : 'Type to search name or number...'}
+                      className="form-input"
                       disabled={savedCustomers.length === 0}
-                    >
-                      <option value="">
-                        {savedCustomers.length === 0 ? 'No saved customers yet' : 'Select saved customer'}
-                      </option>
-                      {savedCustomers.map(customer => (
-                        <option key={customer.id} value={customer.id}>
-                          {`${customer.lastName}, ${customer.firstName} - ${customer.contactNumber}`}
-                        </option>
-                      ))}
-                    </select>
+                      autoComplete="off"
+                    />
+                    {isCustomerDropdownOpen && filteredSavedCustomers.length > 0 && (
+                      <div className="customer-search-dropdown">
+                        {filteredSavedCustomers.length === 0 ? (
+                          <div className="customer-search-item-none">No customer found.</div>
+                        ) : (
+                          filteredSavedCustomers.map(customer => (
+                            <div
+                              key={customer.id}
+                              className="customer-search-item"
+                              // Use onMouseDown to fire before onBlur hides the dropdown
+                              onMouseDown={() => handleSelectCustomer(customer)}
+                            >
+                              <strong>{customer.lastName}, {customer.firstName}</strong>
+                              <small>{customer.contactNumber}</small>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 

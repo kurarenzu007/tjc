@@ -97,8 +97,30 @@ export class ProductController {
   // Update product
   static async updateProduct(req, res) {
     try {
-      const { id } = req.params;
+      const { id } = req.params; // This is the product_id (e.g., P001)
       const productData = req.body;
+      
+      // --- THIS IS THE NEW/CORRECT VALIDATION BLOCK ---
+      productData.requires_serial = req.body.requires_serial === 'true';
+
+      if (productData.requires_serial === false) {
+        // Find the product in the database *before* updating
+        const currentProduct = await Product.findById(id);
+        
+        // Check if the setting is being changed from true (1) to false (0)
+        if (currentProduct && currentProduct.requires_serial) {
+          // The user is trying to disable serial numbers.
+          // We must check if any serial numbers exist for this product.
+          const serialsExist = await Product.hasSerialNumbers(id); // <-- Call new model method
+          
+          if (serialsExist) {
+            // If serials exist, throw an error to stop the update.
+            throw new Error(`Cannot disable serial numbers. This product has existing serial numbers associated with it.`);
+          }
+        }
+      }
+      // --- END OF VALIDATION BLOCK ---
+
       // If a new file is uploaded, use its path.
       if (req.file) {
         productData.image = `/uploads/${req.file.filename}`;
@@ -106,8 +128,7 @@ export class ProductController {
         // Otherwise, use the image path sent from the form (or null if it's empty)
         productData.image = productData.image || null;
       }
-      productData.requires_serial = req.body.requires_serial === 'true';
-
+      
       const updated = await Product.update(id, productData);
 
       if (!updated) {
@@ -123,9 +144,11 @@ export class ProductController {
       });
     } catch (error) {
       console.error('Error updating product:', error);
+      
+      // This will now catch our new error and send it to the frontend
       res.status(500).json({
         success: false,
-        message: 'Failed to update product',
+        message: error.message || 'Failed to update product',
         error: error.message
       });
     }

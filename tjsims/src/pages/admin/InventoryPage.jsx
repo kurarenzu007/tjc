@@ -1161,7 +1161,7 @@ const InventoryPage = () => {
                   />
                 </div>
 
-                {stockInModal.product.requires_serial && (
+                {!!stockInModal.product.requires_serial && (
                   <div className="form-group">
                     <label>Serial Numbers (1 per product)</label>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

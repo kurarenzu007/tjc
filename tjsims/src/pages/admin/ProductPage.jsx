@@ -3,6 +3,7 @@ import Navbar from '../../components/admin/Navbar';
 import { BsSearch, BsPlus, BsPencil } from 'react-icons/bs';
 import '../../styles/ProductPage.css';
 import { productAPI, authAPI } from '../../utils/api.js';
+import { serialNumberAPI } from '../../utils/serialNumberApi.js'; // <-- 1. IMPORT SERIAL API
 
 const ProductPage = () => {
   // State for products
@@ -21,6 +22,10 @@ const ProductPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddMode, setIsAddMode] = useState(true);
 
+  // --- 2. ADD NEW STATE ---
+  const [isCheckingSerials, setIsCheckingSerials] = useState(false);
+  const [hasExistingSerials, setHasExistingSerials] = useState(false);
+  
   // Pagination constant
   const itemsPerPage = 10;
 
@@ -133,6 +138,14 @@ const ProductPage = () => {
     setCurrentPage(page);
   };
 
+  // --- 3. CREATE A DEDICATED CLOSE MODAL FUNCTION ---
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedProduct(null);
+    setIsCheckingSerials(false);
+    setHasExistingSerials(false);
+  };
+
   // Handle add new product
   const handleAddProduct = () => {
     setIsAddMode(true);
@@ -148,10 +161,12 @@ const ProductPage = () => {
       requires_serial: false
     });
     setIsModalOpen(true);
+    setHasExistingSerials(false); // Reset
+    setIsCheckingSerials(false); // Reset
   };
 
-  // Handle edit product
-  const handleEditProduct = (product) => {
+  // --- 4. MODIFY handleEditProduct TO CHECK FOR SERIALS ---
+  const handleEditProduct = async (product) => {
     setIsAddMode(false);
     setSelectedProduct({ 
       ...product, 
@@ -159,6 +174,22 @@ const ProductPage = () => {
       requires_serial: !!product.requires_serial
     });
     setIsModalOpen(true);
+    
+    // --- ADD THIS BLOCK TO CHECK FOR SERIALS ---
+    try {
+      setIsCheckingSerials(true);
+      setHasExistingSerials(false); // Reset
+      const response = await serialNumberAPI.getAllSerials(product.product_id);
+      if (response.success && response.data && response.data.length > 0) {
+        setHasExistingSerials(true);
+      }
+    } catch (error) {
+      console.error("Error checking serial numbers:", error);
+      // Don't block the user, but log the error
+    } finally {
+      setIsCheckingSerials(false);
+    }
+    // --- END OF BLOCK ---
   };
 
 
@@ -199,7 +230,7 @@ const ProductPage = () => {
           await loadProducts(); // Refresh the products list
         }
       }
-      setIsModalOpen(false);
+      closeModal(); // <-- Use new close function
     } catch (error) {
       console.error('Error saving product:', error);
       alert('Error saving product: ' + error.message);
@@ -445,7 +476,7 @@ const ProductPage = () => {
             <div className="modal-header">
               <h2>{isAddMode ? 'Add Product' : 'Edit Product'}</h2>
               <button
-                onClick={() => setIsModalOpen(false)}
+                onClick={closeModal} // <-- Use new close function
                 className="close-btn"
               >
                 ×
@@ -577,7 +608,7 @@ const ProductPage = () => {
                   </div>
                 </div>
 
-                {/* --- ADD THIS NEW BLOCK --- */}
+                {/* --- 5. MODIFY THE TOGGLE BLOCK --- */}
                 <div className="form-group">
                   <label>Requires Serial Number</label>
                   <div className="toggle-switch">
@@ -589,6 +620,8 @@ const ProductPage = () => {
                         ...selectedProduct,
                         requires_serial: e.target.checked
                       })}
+                      // Add this disabled prop
+                      disabled={isCheckingSerials || hasExistingSerials}
                     />
                     <label htmlFor="serial-toggle" className="toggle-label">
                       <span className="toggle-slider"></span>
@@ -597,9 +630,20 @@ const ProductPage = () => {
                       </span>
                     </label>
                   </div>
+                  {/* Add this helper text */}
+                  {isCheckingSerials && (
+                    <small style={{ color: '#6c757d', fontSize: '0.85rem', marginTop: '4px', display: 'block' }}>
+                      Checking for existing serial numbers...
+                    </small>
+                  )}
+                  {hasExistingSerials && (
+                    <small style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '4px', display: 'block' }}>
+                      This product has existing serial numbers and this setting cannot be changed.
+                    </small>
+                  )}
+                  {/* --- END OF MODIFICATIONS --- */}
                 </div>
-                {/* --- END OF NEW BLOCK --- */}
-
+                
                 <div className="form-group">
                   <label>Status</label>
                   <div className="toggle-switch">
@@ -623,7 +667,7 @@ const ProductPage = () => {
               </div>
 
               <div className="modal-actions">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="cancel-btn">
+                <button type="button" onClick={closeModal} className="cancel-btn"> {/* <-- Use new close function */}
                   Cancel
                 </button>
                 <button type="submit" className="save-btn" disabled={isSubmitting}>

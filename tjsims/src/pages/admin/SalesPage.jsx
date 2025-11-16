@@ -115,24 +115,30 @@ const SalesPage = () => {
     product.brand.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleQuantityChange = (productId, change) => {
+  // --- NEW FUNCTION to handle all quantity changes (buttons and input) ---
+  const setProductQuantity = (productId, newQtyValue) => {
     const product = products.find(p => p.product_id === productId);
     if (!product) return;
 
-    const currentQty = quantities[productId] || 1;
-    const newQty = currentQty + change;
+    let newQty = parseInt(newQtyValue, 10);
 
-    // Enforce minimum of 1
-    if (newQty < 1) return;
+    // If input is empty or invalid, default to 1
+    if (isNaN(newQty) || newQty < 1) {
+      setQuantities(prev => ({
+        ...prev,
+        [productId]: 1
+      }));
+      return; // Exit here, don't proceed with 0 or NaN
+    }
 
     // Enforce maximum of available stock
     if (newQty > product.stock) {
       alert(`Cannot exceed available stock (${product.stock} units available)`);
-      return;
+      newQty = product.stock;
     }
 
     // Handle serial numbers when decreasing quantity
-    if (change < 0 && product.requires_serial) {
+    if (product.requires_serial) {
       const currentSerials = selectedSerials[productId] || [];
       if (currentSerials.length > newQty) {
         // Auto-remove excess serials from the end
@@ -146,20 +152,23 @@ const SalesPage = () => {
         }
       }
     }
-
-    // Handle serial numbers when increasing quantity
-    if (change > 0 && product.requires_serial) {
-      const currentSerials = selectedSerials[productId] || [];
-      if (currentSerials.length < newQty) {
-        alert(`Please select ${newQty - currentSerials.length} more serial number(s) after increasing quantity`);
-      }
-    }
+    // NOTE: The annoying alert for *increasing* quantity is now removed.
 
     setQuantities(prev => ({
       ...prev,
       [productId]: newQty
     }));
   };
+
+  // --- UPDATED FUNCTION to use the new central logic ---
+  const handleQuantityChange = (productId, change) => {
+    const currentQty = quantities[productId] || 1;
+    const newQty = currentQty + change;
+    
+    // Let the new central function handle all validation
+    setProductQuantity(productId, newQty);
+  };
+
 
   const addToSale = async (product) => {
     const quantity = quantities[product.product_id] || 1;
@@ -728,9 +737,18 @@ const SalesPage = () => {
                                   >
                                     -
                                   </button>
-                                  <span className="quantity-display">
-                                    {quantities[product.product_id] || 1}
-                                  </span>
+                                  
+                                  {/* --- MODIFIED: Replaced <span> with <input> --- */}
+                                  <input
+                                    type="number"
+                                    value={quantities[product.product_id] || 1}
+                                    onChange={(e) => setProductQuantity(product.product_id, e.target.value)}
+                                    className="quantity-input"
+                                    min="1"
+                                    max={product.stock}
+                                  />
+                                  {/* --- END OF MODIFICATION --- */}
+                                  
                                   <button
                                     onClick={() => handleQuantityChange(product.product_id, 1)}
                                     className="quantity-btn"

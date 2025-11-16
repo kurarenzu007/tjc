@@ -243,3 +243,27 @@
     grid-template-columns: 1fr;
   }
 }
+
+.quantity-input {
+  width: 50px;
+  text-align: center;
+  font-weight: 500;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  height: 28px;
+  padding: 0 4px;
+  font-size: 0.9rem;
+  color: var(--color-text-dark);
+}
+
+/* For Firefox */
+.quantity-input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* For Chrome, Safari, Edge */
+.quantity-input::-webkit-outer-spin-button,
+.quantity-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

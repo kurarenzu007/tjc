@@ -298,33 +298,45 @@ const InventoryPage = () => {
       return;
     }
 
+    let validSerials = [];
+    const { product } = stockInModal; 
+
+    if (product.requires_serial) {
+      validSerials = stockInForm.serialNumbers.filter(s => s.trim() !== '');
+      
+      if (validSerials.length !== quantityToAdd) {
+        alert(`This product requires serial numbers. Please provide exactly ${quantityToAdd} unique serial number(s).`);
+        return;
+      }
+      
+      const uniqueSerials = new Set(validSerials);
+      if (uniqueSerials.size !== validSerials.length) {
+        alert('Please enter unique serial numbers. Duplicates are not allowed.');
+        return;
+      }
+    }
+
     try {
       setIsSubmitting(true);
 
-      // Prepare serial numbers
-      const validSerials = stockInForm.serialNumbers.filter(s => s.trim() !== '');
-      
-      // Create serial number records FIRST (before adding stock)
-      if (validSerials.length > 0) {
+      if (product.requires_serial && validSerials.length > 0) {
         const serialsToCreate = validSerials.map(sn => ({
           serialNumber: sn,
-          productId: stockInModal.product.product_id,
+          productId: product.product_id,
           notes: `Stock In - ${stockInForm.supplier}`
         }));
         
-        // This will throw error if duplicates exist - preventing stock from being added
         await serialNumberAPI.createSerials(serialsToCreate);
       }
 
-      // Only add stock if serial numbers were created successfully (or none provided)
       const payload = {
         supplier: stockInForm.supplier,
         receivedBy: stockInForm.receivedBy,
         receivedDate: stockInForm.receivedDate,
         products: [{
-          productId: stockInModal.product.product_id,
+          productId: product.product_id,
           quantity: quantityToAdd,
-          serialNumber: validSerials[0] || null
+          serialNumber: (product.requires_serial && validSerials.length > 0) ? validSerials[0] : null
         }]
       };
 
@@ -338,10 +350,9 @@ const InventoryPage = () => {
     } catch (error) {
       console.error('Error recording stock in:', error);
 
-      // Make error messages more user-friendly
       let errorMessage = error.message;
       if (error.message.includes('already exist')) {
-        errorMessage = `Serial number validation failed. Please use unique serial numbers that haven't been used for this product before.`;
+        errorMessage = `One or more serial numbers already exist in the database. Please use unique serial numbers.`;
       }
 
       alert(errorMessage || 'Failed to record stock in.');
@@ -583,12 +594,16 @@ const InventoryPage = () => {
                 >
                   Return to Supplier
                 </button>
+                
+                {/* --- FIX: Renamed button --- */}
                 <button 
                   onClick={handleOpenBulkStockIn}
                   className="btn btn-warning"
                 >
-                  + Stock In
+                  + Bulk Stock In
                 </button>
+                {/* --- END OF FIX --- */}
+
               </div>
             </div>
           </div>
@@ -1146,28 +1161,32 @@ const InventoryPage = () => {
                   />
                 </div>
 
-                <div className="form-group">
-                  <label>Serial Numbers (1 per product)</label>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {Array.from({ length: parseInt(stockInForm.quantity) || 1 }, (_, index) => (
-                      <input
-                        key={`serial-${index}`}
-                        type="text"
-                        value={(stockInForm.serialNumbers && stockInForm.serialNumbers[index]) || ''}
-                        onChange={(e) => {
-                          const newSerials = Array.from({ length: parseInt(stockInForm.quantity) || 1 }, (_, i) => 
-                            (stockInForm.serialNumbers && stockInForm.serialNumbers[i]) || ''
-                          );
-                          newSerials[index] = e.target.value;
-                          setStockInForm(prev => ({ ...prev, serialNumbers: newSerials }));
-                        }}
-                        className="form-input"
-                        placeholder={`Serial Number ${index + 1} (optional)`}
-                        style={{ marginBottom: '4px' }}
-                      />
-                    ))}
+                {stockInModal.product.requires_serial && (
+                  <div className="form-group">
+                    <label>Serial Numbers (1 per product)</label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {Array.from({ length: parseInt(stockInForm.quantity) || 1 }, (_, index) => (
+                        <input
+                          key={`serial-${index}`}
+                          type="text"
+                          value={(stockInForm.serialNumbers && stockInForm.serialNumbers[index]) || ''}
+                          onChange={(e) => {
+                            const newSerials = Array.from({ length: parseInt(stockInForm.quantity) || 1 }, (_, i) => 
+                              (stockInForm.serialNumbers && stockInForm.serialNumbers[i]) || ''
+                            );
+                            newSerials[index] = e.target.value;
+                            setStockInForm(prev => ({ ...prev, serialNumbers: newSerials }));
+                          }}
+                          className="form-input"
+                          placeholder={`Serial Number ${index + 1} (Required)`}
+                          style={{ marginBottom: '4px' }}
+                          required
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
+                
               </div>
 
               <div className="modal-actions">

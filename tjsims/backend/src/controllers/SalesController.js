@@ -21,7 +21,8 @@ export class SalesController {
       const enrichedItems = [];
 
       for (const item of items) {
-        const { product_id, quantity } = item;
+        // --- FIX: Destructure serialNumbers from the item ---
+        const { product_id, quantity, serialNumbers } = item;
 
         if (!product_id || !quantity || quantity <= 0) {
           return res.status(400).json({
@@ -47,7 +48,9 @@ export class SalesController {
           product_name: product.name,
           brand: product.brand,
           price: product.price,
-          quantity: quantity
+          quantity: quantity,
+          // --- FIX: Pass the serialNumbers to the create method ---
+          serialNumbers: serialNumbers || []
         });
       }
 

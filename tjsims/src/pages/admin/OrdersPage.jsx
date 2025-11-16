@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Navbar from '../../components/admin/Navbar';
-import { BsSearch, BsEye, BsArrowReturnLeft, BsFileText } from 'react-icons/bs';
+import { BsSearch, BsEye, BsArrowReturnLeft, BsFileText, BsFileEarmarkText, BsFillExclamationTriangleFill, BsFillCheckCircleFill, BsPiggyBank } from 'react-icons/bs';
 import '../../styles/OrdersPage.css'; 
 
 // --- THIS IS THE FIX ---
@@ -506,28 +506,48 @@ const OrdersPage = () => {
 
             {/* Stats Cards */}
             <div className="dashboard-stats">
-              <div className="stat-card sales"> {/* <-- ADDED CLASS */}
-                <div className="stat-info">
-                  <h3 className="stat-title">Total Transactions</h3>
-                  <p className="stat-value sales">{stats.total_sales}</p>
+              <div className="stat-card sales">
+                <div className="stat-info-flex"> {/* <-- CHANGED */}
+                  <div> {/* Text Wrapper */}
+                    <h3 className="stat-title">Total Transactions</h3>
+                    <p className="stat-value sales">{stats.total_sales}</p>
+                  </div>
+                  <div className="stat-icon sales"> {/* Icon Wrapper */}
+                    <BsFileEarmarkText />
+                  </div>
                 </div>
               </div>
-              <div className="stat-card low-stock"> {/* <-- ADDED CLASS */}
-                <div className="stat-info">
-                  <h3 className="stat-title">Pending Orders</h3>
-                  <p className="stat-value low-stock">{stats.pendingOrders}</p>
+              <div className="stat-card low-stock">
+                <div className="stat-info-flex"> {/* <-- CHANGED */}
+                  <div> {/* Text Wrapper */}
+                    <h3 className="stat-title">Pending Orders</h3>
+                    <p className="stat-value low-stock">{stats.pendingOrders}</p>
+                  </div>
+                  <div className="stat-icon low-stock"> {/* Icon Wrapper */}
+                    <BsFillExclamationTriangleFill />
+                  </div>
                 </div>
               </div>
-              <div className="stat-card revenue"> {/* <-- ADDED CLASS */}
-                <div className="stat-info">
-                  <h3 className="stat-title">Paid Orders</h3>
-                  <p className="stat-value revenue">{stats.paidOrders}</p>
+              <div className="stat-card revenue">
+                <div className="stat-info-flex"> {/* <-- CHANGED */}
+                  <div> {/* Text Wrapper */}
+                    <h3 className="stat-title">Paid Orders</h3>
+                    <p className="stat-value revenue">{stats.paidOrders}</p>
+                  </div>
+                  <div className="stat-icon in-stock"> {/* Icon Wrapper */}
+                    <BsFillCheckCircleFill />
+                  </div>
                 </div>
               </div>
-              <div className="stat-card inventory"> {/* <-- ADDED CLASS */}
-                <div className="stat-info">
-                  <h3 className="stat-title">Total Revenue</h3>
-                  <p className="stat-value inventory">₱{Number(stats.total_revenue).toLocaleString()}</p>
+              <div className="stat-card inventory">
+                <div className="stat-info-flex"> {/* <-- CHANGED */}
+                  <div> {/* Text Wrapper */}
+                    <h3 className="stat-title">Total Revenue</h3>
+                    <p className="stat-value inventory">₱{Number(stats.total_revenue).toLocaleString()}</p>
+                  </div>
+                  <div className="stat-icon inventory"> {/* Icon Wrapper */}
+                    <BsPiggyBank />
+                  </div>
                 </div>
               </div>
             </div>

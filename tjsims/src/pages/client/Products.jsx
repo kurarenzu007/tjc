@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import Navbar from '../../components/client/Navbar';
 import Footer from '../../components/client/Footer';
 import '../../styles/Products.css';
-import { inventoryAPI } from '../../utils/api';
+import { inventoryAPI, dashboardAPI } from '../../utils/api';
 
 const currency = (n) => `₱ ${Number(n || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
 
@@ -19,6 +19,7 @@ const Products = () => {
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
+
     // Pull products with inventory so we can show stock and filter by availability
     inventoryAPI.getProductsWithInventory()
       .then((res) => {
@@ -68,10 +69,6 @@ const Products = () => {
 
       {/* Main Content */}
       <main className="products-main">
-        <div className="products-header">
-          <h1>PRODUCT CATALOG</h1>
-          <p>Browse our complete inventory of automotive spare parts.</p>
-        </div>
 
         {/* Search and Filter Section */}
         <div className="search-filter-container">
@@ -97,38 +94,43 @@ const Products = () => {
           </div>
         </div>
 
+      <h2 style={{color: "#2c3e50"}}>All Products</h2>
         <div className="products-grid">
-          {loading && <div className="product-card">Loading...</div>}
-          {error && !loading && <div className="product-card">{error}</div>}
-          {!loading && !error && filtered.map((p) => (
-            <div key={p.product_id || p.id} className="product-card">
-              <div className="product-image-wrapper">
-                <div className="stock-badge">In Stock</div>
-                <img 
-                  src={p.image ? (p.image.startsWith('http') ? p.image : `http://localhost:5000${p.image}`) : '/placeholder-product.png'} 
-                  alt={p.name} 
-                  onError={(e)=>{e.currentTarget.src='/placeholder-product.png';}} 
-                  className="product-image"
-                />
-                <div className="product-stock-qty">Qty: {p.stock}</div>
-              </div>
-              <div className="product-info">
-                <span className="product-brand">{p.brand}</span>
-                <h3 className="product-title">{p.name}</h3>
-                <div className="product-price-section">
-                  <span className="product-label">Price</span>
-                  <span className="product-price">{currency(p.price)}</span>
-                </div>
-                <Link 
-                  to={`/products/${encodeURIComponent(p.name.toLowerCase().replace(/\s+/g, '-'))}`} 
-                  state={{ productId: p.product_id || p.id }}
-                  className="view-details-button"
-                >
-                  View Details <span className="arrow">›</span>
-                </Link>
-              </div>
+          {!loading && !error && filtered.map((p) => {
+
+
+    return (
+    <div key={p.product_id || p.id} className="product-card">
+        {/* (The product-image-wrapper) */}
+        <div className="product-image-wrapper">
+        <div className="stock-badge">In Stock</div>
+        <img 
+            src={p.image ? (p.image.startsWith('http') ? p.image : `http://localhost:5000${p.image}`) : '/placeholder-product.png'} 
+            alt={p.name} 
+            onError={(e)=>{e.currentTarget.src='/placeholder-product.png';}} 
+            className="product-image"
+        />
+        </div>
+        {/* (The product-info) */}
+        <div className="product-info">
+            <span className="product-brand">{p.brand}</span>
+            <h3 className="product-title">{p.name}</h3>
+            <div className="product-price-section">
+            <span className="product-label">Price</span>
+            <span className="product-price">{currency(p.price)}</span>
             </div>
-          ))}
+            <Link 
+            to={`/products/${encodeURIComponent(p.name.toLowerCase().replace(/\s+/g, '-'))}`} 
+            state={{ productId: p.product_id || p.id }}
+            className="view-details-button"
+            >
+            View Details <span className="arrow">›</span>
+            </Link>
+        </div>
+    </div>
+    );
+    // The extra </div> that was here is now removed.
+})}
         </div>
       </main>
 

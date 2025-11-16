@@ -126,3 +126,31 @@
 .toggle-switch input:checked + .toggle-label .toggle-text {
   color: var(--color-success);
 }
+
+/* --- New Product Page Control Layout --- */
+
+.product-controls .filter-section {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  width: 100%; /* Make the filter bar take the full width */
+}
+
+/* Make the dropdowns and search bar share the space */
+.product-controls .filter-section .filter-dropdown {
+  flex-grow: 1;
+  flex-basis: 0;
+  min-width: 180px;
+}
+
+.product-controls .filter-section .search-box {
+  flex-grow: 1;
+  flex-basis: 0;
+  min-width: 200px;
+}
+
+.filter-section .btn {
+  flex-grow: 1;
+  flex-basis: 0;
+  min-width: 150px;
+}

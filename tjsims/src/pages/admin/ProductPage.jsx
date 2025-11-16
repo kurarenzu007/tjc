@@ -245,7 +245,7 @@ const ProductPage = () => {
     <div className="admin-layout">
       <Navbar />
       <main className="admin-main">
-        <div className="admin-container">
+        <div className="admin-container product-page-content">
 
           {/* Header Section */}
           <div className="page-header">
@@ -255,15 +255,14 @@ const ProductPage = () => {
 
           {/* Controls Section */}
           <div className="card">
-            <div className="product-controls">
-              <div className="add-product-section">
-                <button className="btn btn-warning" onClick={handleAddProduct}>
-                  <BsPlus className="plus-icon" />
-                  Add Product
-                </button>
-              </div>
+            
 
               <div className="filter-section">
+                  <div className="add-product-section">
+                    <button className="btn btn-warning" onClick={handleAddProduct}>
+                      <BsPlus className="plus-icon" />
+                      Add Product
+                    </button>
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
@@ -356,7 +355,7 @@ const ProductPage = () => {
                     ) : (
                       currentProducts.map(product => (
                         <tr key={product.id}>
-                          <td>{product.product_id}</td>
+                          <td className="order-id-cell">{product.product_id}</td>
                           <td>
                             <div className="product-info">
                               <h4>{product.name}</h4>

@@ -768,7 +768,7 @@ const SalesPage = () => {
                                   <button
                                     onClick={() => handleOpenSerialModal(product)}
                                     disabled={product.stock === 0}
-                                    className="select-serial-btn"
+                                    className="btn btn-info"
                                   >
                                     Select Serial
                                   </button>
@@ -777,7 +777,7 @@ const SalesPage = () => {
                                 <button
                                   onClick={() => addToSale(product)}
                                   disabled={product.stock === 0}
-                                  className="add-to-sale-btn"
+                                  className="btn btn-primary"
                                 >
                                   <BsCartPlus className="sale-icon" />
                                   Add to Sale

@@ -90,34 +90,7 @@
 }
 
 .action-buttons-cell { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.add-to-sale-btn {
-  background-color: var(--color-primary);
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 500;
-  height: 32px;
-}
-.add-to-sale-btn:hover:not(:disabled) { background-color: var(--color-primary-dark); }
-.add-to-sale-btn:disabled { background-color: #999; cursor: not-allowed; }
 
-.select-serial-btn {
-  background-color: var(--color-info);
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 500;
-  white-space: nowrap;
-  height: 32px;
-}
-.select-serial-btn:hover:not(:disabled) { background-color: #138496; }
-.select-serial-btn:disabled { background-color: #999; cursor: not-allowed; }
 
 /* Right Column: Sale */
 .right-panel {

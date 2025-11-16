@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../../components/admin/Navbar';
-import { BsSearch, BsPencil, BsArchive, BsCheckCircle, BsExclamationCircle, BsXCircle } from 'react-icons/bs';
+import { BsSearch, BsPencil, BsFillArchiveFill, BsFillCheckCircleFill, BsFillExclamationTriangleFill, BsFillXCircleFill } from 'react-icons/bs';
 import '../../styles/InventoryPage.css';
 import { inventoryAPI } from '../../utils/api'; 
 import { serialNumberAPI } from '../../utils/serialNumberApi';
@@ -603,7 +603,7 @@ const InventoryPage = () => {
                   <p className="stat-value inventory">{inventoryStats.totalProducts}</p>
                 </div>
                 <div className="stat-icon inventory"> {/* Icon Wrapper */}
-                  <BsArchive />
+                  <BsFillArchiveFill />
                 </div>
               </div>
             </div>
@@ -615,7 +615,7 @@ const InventoryPage = () => {
                   <p className="stat-value in-stock">{inventoryStats.inStock}</p>
                 </div>
                 <div className="stat-icon in-stock"> {/* Icon Wrapper */}
-                  <BsCheckCircle />
+                  <BsFillCheckCircleFill />
                 </div>
               </div>
             </div>
@@ -627,7 +627,7 @@ const InventoryPage = () => {
                   <p className="stat-value low-stock">{inventoryStats.lowStock}</p>
                 </div>
                 <div className="stat-icon low-stock"> {/* Icon Wrapper */}
-                  <BsExclamationCircle />
+                  <BsFillExclamationTriangleFill />
                 </div>
               </div>
             </div>
@@ -639,7 +639,7 @@ const InventoryPage = () => {
                   <p className="stat-value out-of-stock">{inventoryStats.outOfStock}</p>
                 </div>
                 <div className="stat-icon out-of-stock"> {/* Icon Wrapper */}
-                  <BsXCircle />
+                  <BsFillXCircleFill />
                 </div>
               </div>
             </div>

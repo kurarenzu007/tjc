@@ -328,16 +328,43 @@
   align-items: center;
 }
 
+/* This is the new wrapper style */
 .stat-icon {
-  font-size: 3.2rem; /* Sets icon size to 32px */
-  opacity: 0.7;
+  width: 48px;  /* Set a fixed size */
+  height: 48px;
+  border-radius: var(--radius-md); /* 8px rounded corners */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem; /* 24px icon */
+  opacity: 1; /* Reset opacity */
 }
 
-/* Match icon colors to your font colors */
-.stat-icon.inventory { color: #6f42c1; }
-.stat-icon.in-stock { color: var(--color-success); }
-.stat-icon.low-stock { color: var(--color-warning); }
-.stat-icon.out-of-stock { color: var(--color-danger); }
+/* --- Color Pairings --- */
+
+/* Total Products (Purple) */
+.stat-icon.inventory {
+  background-color: #ede9fe; /* Light Purple */
+  color: #6f42c1;           /* Dark Purple */
+}
+
+/* In Stock (Green) - matches role-staff */
+.stat-icon.in-stock {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+/* Low on Stock (Orange) */
+.stat-icon.low-stock {
+  background-color: #fff7ed; /* Light Orange */
+  color: var(--color-warning); /* #fd7e14 */
+}
+
+/* Out of Stock (Red) - matches role-admin */
+.stat-icon.out-of-stock {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
 
 /* Dashboard Card */
 .dashboard-card {
@@ -782,7 +809,7 @@
 
 .price-cell {
   font-weight: 600;
-  color: var(--color-success);
+  color: var(--color-text-dark);
 }
 
 .loading-state, .error-state, .empty-state {

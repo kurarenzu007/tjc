@@ -59,6 +59,14 @@ const SalesPage = () => {
   const [selectedProductForSerial, setSelectedProductForSerial] = useState(null);
   const [availableSerials, setAvailableSerials] = useState([]);
   const [selectedSerials, setSelectedSerials] = useState({});
+  
+  // Helper to calculate total sales dynamically
+  const getSaleTotal = () => {
+    return saleItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+  };
+  
+  // Flag availability of Company Delivery (min ₱5,000)
+  const isCompanyDeliveryAvailable = useMemo(() => getSaleTotal() >= 5000, [saleItems]);
 
   // Fetch data on component mount
   useEffect(() => {
@@ -98,6 +106,58 @@ const SalesPage = () => {
         setTenderedAmount('');
     }
   }, [paymentOption]);
+  
+// --- PAYMENT OPTION HANDLER ---
+  const handlePaymentOptionChange = (value) => {
+    const isCOD = value === 'Cash on Delivery';
+    
+    // 1. If COD is selected BUT Company Delivery is NOT available (below ₱5,000), block the selection and alert.
+    if (isCOD && !isCompanyDeliveryAvailable) {
+        setPaymentOption(''); // Clear the selection
+        alert("Cash on Delivery is only available with Company Delivery for sales of ₱5,000 or more.");
+        return;
+    }
+    
+    // 2. Set the new payment option state immediately
+    setPaymentOption(value);
+    
+    // 3. If COD is selected AND Company Delivery is possible, auto-set shipping to Company Delivery.
+    if (isCOD && isCompanyDeliveryAvailable) {
+        setShippingOption('Company Delivery');
+    }
+  };
+// --- END PAYMENT OPTION HANDLER ---
+  
+  const handleShippingOptionChange = (value) => {
+    // Prevent switching to In-Store Pickup if Payment is COD
+    if (paymentOption === 'Cash on Delivery' && value === 'In-Store Pickup') {
+      alert("Cash on Delivery requires a delivery method.");
+      return; // Stop the change
+    }
+    setShippingOption(value);
+  }
+
+  // --- Constraint useEffect for Delivery and threshold check ---
+  useEffect(() => {
+    // 1. If Company Delivery becomes unavailable (e.g., item removed), force shipping back to In-Store Pickup
+    if (!isCompanyDeliveryAvailable && shippingOption === 'Company Delivery') {
+      setShippingOption('In-Store Pickup');
+    }
+    
+    // 2. If COD is selected but now ineligible, clear the payment option.
+    // This handles the case where total drops below 5k AFTER COD was selected.
+    if (paymentOption === 'Cash on Delivery' && !isCompanyDeliveryAvailable) {
+        setPaymentOption(''); // Force payment option clear
+        alert("Your order total dropped below ₱5,000. Cash on Delivery is no longer available and has been deselected.");
+    }
+    
+    // 3. If payment is COD and somehow shipping is 'In-Store Pickup', force it to 'Company Delivery' 
+    if (paymentOption === 'Cash on Delivery' && shippingOption === 'In-Store Pickup') {
+        setShippingOption('Company Delivery'); 
+    }
+
+  }, [paymentOption, shippingOption, isCompanyDeliveryAvailable]);
+  // --- END Constraint useEffect ---
 
   const fetchProductsAndInventory = async () => {
     try {
@@ -334,6 +394,28 @@ const SalesPage = () => {
     }
   };
 
+  // --- NEW HANDLER FUNCTION ---
+  const handleSaleQuantityInput = (productId, event) => {
+    const value = event.target.value;
+    const item = saleItems.find(item => item.product_id === productId);
+    if (!item) return;
+
+    let newQuantity = parseInt(value, 10);
+    
+    // Fallback to min quantity of 1 if invalid input (empty or <= 0)
+    if (isNaN(newQuantity) || newQuantity < 1) {
+        newQuantity = 1;
+    }
+    
+    if (newQuantity === item.quantity) return;
+
+    const quantityDifference = newQuantity - item.quantity;
+    
+    // Call existing function which handles all constraints (stock check, serial check alert).
+    updateSaleQuantity(productId, quantityDifference);
+  };
+  // --- END NEW HANDLER FUNCTION ---
+
   const fillCustomerFields = (customer) => {
     setLastName(customer.lastName || '');
     setFirstName(customer.firstName || '');
@@ -434,10 +516,7 @@ const SalesPage = () => {
     alert('Saved customer removed.');
   };
 
-  const getSaleTotal = () => {
-    return saleItems.reduce((total, item) => total + (item.price * item.quantity), 0);
-  };
-
+  
   const clearSale = async () => {
     if (saleItems.length === 0) return;
 
@@ -493,6 +572,8 @@ const SalesPage = () => {
     setSelectedCustomerId('');
     setCustomerSearch(''); 
     setPaymentOption('');
+    // Reset to default shipping option
+    setShippingOption('In-Store Pickup'); 
   };
 
   const handleOpenSerialModal = async (product) => {
@@ -602,10 +683,6 @@ const SalesPage = () => {
     try {
       setSubmitting(true);
 
-      if (getSaleTotal() < 5000 && shippingOption !== 'Company Delivery') { 
-        setShippingOption('In-Store Pickup');
-      }
-      
       let newOrderStatus;
       let newPaymentStatus;
 
@@ -615,7 +692,7 @@ const SalesPage = () => {
       } else if (shippingOption === 'In-Store Pickup') {
         newOrderStatus = 'Completed';
         newPaymentStatus = 'Paid';
-      } else {
+      } else { // Must be 'Company Delivery'
         newOrderStatus = 'Processing'; 
         newPaymentStatus = 'Paid';
       }
@@ -885,9 +962,18 @@ const SalesPage = () => {
                                 >
                                   -
                                 </button>
-                                <span className="quantity-display">
-                                  {item.quantity}
-                                </span>
+                                {/* --- REPLACED SPAN WITH INPUT --- */}
+                                <input
+                                    type="number"
+                                    value={item.quantity}
+                                    onChange={(e) => handleSaleQuantityInput(item.product_id, e)}
+                                    className="quantity-input" // Re-use the existing style
+                                    min="1"
+                                    disabled={hasSerials}
+                                    style={{ width: '40px', textAlign: 'center' }}
+                                    title={hasSerials ? "Cannot change quantity for items with serial numbers" : "Enter quantity"}
+                                />
+                                {/* --- END REPLACEMENT --- */}
                                 <button
                                   onClick={() => updateSaleQuantity(item.product_id, 1)}
                                   className="quantity-btn"
@@ -1103,7 +1189,7 @@ const SalesPage = () => {
                     <label>Payment Option</label>
                     <select
                       value={paymentOption}
-                      onChange={(e) => setPaymentOption(e.target.value)}
+                      onChange={(e) => handlePaymentOptionChange(e.target.value)}
                       className="form-select"
                     >
                       <option value="">Select payment option</option>
@@ -1115,7 +1201,9 @@ const SalesPage = () => {
                         <option value="GCash">GCash</option>
                       )}
                       {paymentSettings.cod_enabled && (
-                        <option value="Cash on Delivery">Cash on Delivery</option> 
+                        <option value="Cash on Delivery" disabled={!isCompanyDeliveryAvailable}>
+                           Cash on Delivery
+                        </option> 
                       )}
                       {/* --- END CONDITIONAL RENDERING --- */}
                     </select>
@@ -1124,13 +1212,18 @@ const SalesPage = () => {
                     <label>Shipping Option</label>
                     <select
                       value={shippingOption}
-                      onChange={(e) => setShippingOption(e.target.value)}
+                      onChange={(e) => handleShippingOptionChange(e.target.value)}
                       className="form-select"
                     >
-                      <option value="In-Store Pickup">In-Store Pickup</option>
-                      {getSaleTotal() >= 5000 && (
-                        <option value="Company Delivery">Company Delivery</option>
-                      )}
+                      {/* Option 1: In-Store Pickup (Disabled if payment is COD) */}
+                      <option value="In-Store Pickup" disabled={paymentOption === 'Cash on Delivery'}>
+                          In-Store Pickup
+                      </option>
+                      
+                      {/* Option 2: Company Delivery (Conditional on Total >= 5000) */}
+                      <option value="Company Delivery" disabled={!isCompanyDeliveryAvailable}>
+                          Company Delivery (Free)
+                      </option>
                     </select>
                   </div>
                 </div>

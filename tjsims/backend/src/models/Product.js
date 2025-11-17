@@ -159,11 +159,13 @@ export class Product {
     const [result] = await pool.execute('DELETE FROM products WHERE id = ?', [id]);
     return result.affectedRows > 0;
   }
+  
   static async hasSerialNumbers(productId) {
     const pool = getPool();
     const [rows] = await pool.execute(
-      // Checks if any serial number exists for the given product_id
-      'SELECT COUNT(*) as count FROM serial_numbers WHERE product_id = ?',
+      // CRITICAL FIX: Only block if serials are sold or defective (tied to un-reversable history).
+      // If status is 'available' or 'returned', they can be removed/re-purposed.
+      'SELECT COUNT(*) as count FROM serial_numbers WHERE product_id = ? AND status IN ("sold", "defective")',
       [productId]
     );
     // Returns true if count > 0, false otherwise

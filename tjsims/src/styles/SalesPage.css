@@ -221,14 +221,28 @@
 
 /* Out of Stock Visuals */
 .products-table tbody tr.row-disabled { background-color: #f9fafb; }
+
+/* --- MODIFIED: Target all disabled buttons in the action cell --- */
+.action-buttons-cell .btn[disabled],
+.action-buttons-cell .btn[disabled]:hover {
+  background-color: #e5e7eb !important; /* Force grey background */
+  color: #9ca3af !important; /* Force grey text */
+  border-color: #d1d5db !important;
+  opacity: 0.7 !important;
+  cursor: not-allowed !important; /* Fix cursor issue */
+  box-shadow: none !important;
+  transform: none !important;
+}
+
 .quantity-btn:disabled,
-.select-serial-btn:disabled,
+.select-serial-btn:disabled, /* This selector is legacy but left for safety */
 .add-to-sale-btn:disabled {
   background-color: #e5e7eb;
   color: #9ca3af;
   border-color: #d1d5db;
   opacity: 0.7;
 }
+
 .add-to-sale-btn:disabled:hover,
 .select-serial-btn:disabled:hover { background-color: #e5e7eb; }
 .row-disabled td { color: #9ca3af; }
@@ -364,3 +378,4 @@
   font-style: italic;
 }
 /* --- End of New Styles --- */
+}

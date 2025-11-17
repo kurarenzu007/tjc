@@ -121,9 +121,26 @@ const DeliveryPortal = () => {
   const [deliveryProof, setDeliveryProof] = useState(null);
   const [uploadingProof, setUploadingProof] = useState(false);
 
-  const handlePaymentStatusChange = (orderId, value) => {
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, paymentStatus: value } : o));
+// --- MODIFIED FUNCTION START ---
+  const handlePaymentStatusChange = async (orderId, newPaymentStatus) => {
+    const target = orders.find(o => o.id === orderId);
+    if (!target) return;
+
+    try {
+      // 1. API call to update payment status in the backend
+      await salesAPI.updateSale(target.saleId, { payment_status: newPaymentStatus });
+      
+      // 2. Update local state upon success
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, paymentStatus: newPaymentStatus } : o));
+      
+      if (newPaymentStatus === 'Paid' && target.paymentMethod === 'Cash on Delivery') {
+          alert('Payment status updated to Paid. You can now complete the delivery.');
+      }
+    } catch (e) {
+      alert(`Failed to update payment status: ${e.message}`);
+    }
   };
+// --- MODIFIED FUNCTION END ---
 
   const handleOrderStatusChange = async (orderId, newStatus) => {
     const target = orders.find(o => o.id === orderId);
@@ -314,6 +331,7 @@ const DeliveryPortal = () => {
                           className="complete-delivery-btn" 
                           onClick={() => handleCompleteDelivery(order)} 
                           title="Complete Delivery"
+                          disabled={order.paymentStatus !== 'Paid'} 
                           style={{ 
                             backgroundColor: '#28a745', 
                             color: 'white', 

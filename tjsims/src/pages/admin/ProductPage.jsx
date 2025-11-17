@@ -22,9 +22,10 @@ const ProductPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddMode, setIsAddMode] = useState(true);
 
-  // --- 2. ADD NEW STATE ---
+  // --- 2. MODIFIED STATE FOR CLARITY ---
   const [isCheckingSerials, setIsCheckingSerials] = useState(false);
-  const [hasExistingSerials, setHasExistingSerials] = useState(false);
+  // This state is true only if serials exist with status 'sold' or 'defective'
+  const [hasUnremovableSerials, setHasUnremovableSerials] = useState(false);
   
   // Pagination constant
   const itemsPerPage = 10;
@@ -143,7 +144,7 @@ const ProductPage = () => {
     setIsModalOpen(false);
     setSelectedProduct(null);
     setIsCheckingSerials(false);
-    setHasExistingSerials(false);
+    setHasUnremovableSerials(false); // Reset
   };
 
   // Handle add new product
@@ -161,11 +162,11 @@ const ProductPage = () => {
       requires_serial: false
     });
     setIsModalOpen(true);
-    setHasExistingSerials(false); // Reset
+    setHasUnremovableSerials(false); // Reset
     setIsCheckingSerials(false); // Reset
   };
 
-  // --- 4. MODIFY handleEditProduct TO CHECK FOR SERIALS ---
+  // --- 4. MODIFIED handleEditProduct TO CHECK FOR SOLD/DEFECTIVE SERIALS ---
   const handleEditProduct = async (product) => {
     setIsAddMode(false);
     setSelectedProduct({ 
@@ -175,19 +176,25 @@ const ProductPage = () => {
     });
     setIsModalOpen(true);
     
-    // --- ADD THIS BLOCK TO CHECK FOR SERIALS ---
-    try {
-      setIsCheckingSerials(true);
-      setHasExistingSerials(false); // Reset
-      const response = await serialNumberAPI.getAllSerials(product.product_id);
-      if (response.success && response.data && response.data.length > 0) {
-        setHasExistingSerials(true);
-      }
-    } catch (error) {
-      console.error("Error checking serial numbers:", error);
-      // Don't block the user, but log the error
-    } finally {
-      setIsCheckingSerials(false);
+    // --- ADD THIS BLOCK TO CHECK FOR SOLD/DEFECTIVE SERIALS (UX check) ---
+    if (!!product.requires_serial) { // Only check if serials are currently required
+        try {
+            setIsCheckingSerials(true);
+            setHasUnremovableSerials(false); // Reset
+            
+            // Get ALL serials for client-side status check
+            const response = await serialNumberAPI.getAllSerials(product.product_id);
+            if (response.success && response.data) {
+                // Check if any serial is in a locked state (sold or defective)
+                const soldOrDefectiveExists = response.data.some(s => s.status === 'sold' || s.status === 'defective');
+                setHasUnremovableSerials(soldOrDefectiveExists); // Set lock state based on status
+            }
+        } catch (error) {
+            console.error("Error checking serial numbers:", error);
+            // Don't block the user, but log the error
+        } finally {
+            setIsCheckingSerials(false);
+        }
     }
     // --- END OF BLOCK ---
   };
@@ -620,8 +627,8 @@ const ProductPage = () => {
                         ...selectedProduct,
                         requires_serial: e.target.checked
                       })}
-                      // Add this disabled prop
-                      disabled={isCheckingSerials || hasExistingSerials}
+                      // Disable the toggle only if checking or if an unremovable serial exists (locking the setting)
+                      disabled={isCheckingSerials || hasUnremovableSerials}
                     />
                     <label htmlFor="serial-toggle" className="toggle-label">
                       <span className="toggle-slider"></span>
@@ -636,9 +643,9 @@ const ProductPage = () => {
                       Checking for existing serial numbers...
                     </small>
                   )}
-                  {hasExistingSerials && (
+                  {hasUnremovableSerials && (
                     <small style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '4px', display: 'block' }}>
-                      This product has existing serial numbers and this setting cannot be changed.
+                      This product has **sold or defective serials** and this setting cannot be changed.
                     </small>
                   )}
                   {/* --- END OF MODIFICATIONS --- */}

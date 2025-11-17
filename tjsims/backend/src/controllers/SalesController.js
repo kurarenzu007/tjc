@@ -89,15 +89,15 @@ export class SalesController {
   // Get all sales with optional filters
   static async getAllSales(req, res) {
     try {
-      const { search, date_from, date_to, page = 1, limit = 10 } = req.query;
+      // --- MODIFIED: Destructure delivery_type ---
+      const { search, date_from, date_to, delivery_type, page = 1, limit = 10 } = req.query;
 
-      const filters = { search, date_from, date_to };
+      const filters = { search, date_from, date_to, delivery_type };
       const offset = (page - 1) * limit;
 
-      // Get total count for pagination
-      const totalResult = await Sales.findAll(filters);
-      const total = totalResult.length;
-      const totalPages = Math.ceil(total / limit);
+      // --- MODIFIED: Constructing the count query with all filters ---
+      let countQuery = "SELECT COUNT(*) as total FROM sales WHERE 1=1 AND (status IS NULL OR status <> 'Cancelled')";
+      let countParams = [];
 
       // Get paginated results
       let query = "SELECT * FROM sales WHERE 1=1 AND (status IS NULL OR status <> 'Cancelled')";
@@ -106,23 +106,45 @@ export class SalesController {
       if (search) {
         query += ' AND (sale_number LIKE ? OR customer_name LIKE ? OR contact LIKE ?)';
         params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+        countQuery += ' AND (sale_number LIKE ? OR customer_name LIKE ? OR contact LIKE ?)';
+        countParams.push(`%${search}%`, `%${search}%`, `%${search}%`);
       }
 
       if (date_from) {
         query += ' AND DATE(created_at) >= ?';
         params.push(date_from);
+        countQuery += ' AND DATE(created_at) >= ?';
+        countParams.push(date_from);
       }
 
       if (date_to) {
         query += ' AND DATE(created_at) <= ?';
         params.push(date_to);
+        countQuery += ' AND DATE(created_at) <= ?';
+        countParams.push(date_to);
       }
 
-      query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-      params.push(parseInt(limit), parseInt(offset));
+      // --- ADDED: Filter by delivery_type ---
+      if (delivery_type) {
+        query += ' AND delivery_type = ?';
+        params.push(delivery_type);
+        countQuery += ' AND delivery_type = ?';
+        countParams.push(delivery_type);
+      }
+      // --- END ADDED ---
 
       const { getPool } = await import('../config/database.js');
       const pool = getPool();
+      
+      // Execute the count query with all filters
+      const [totalResult] = await pool.execute(countQuery, countParams);
+      const total = totalResult[0].total;
+      const totalPages = Math.ceil(total / limit);
+
+      // Now apply limit/offset to the main query
+      query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+      params.push(parseInt(limit), parseInt(offset));
+
       const [sales] = await pool.execute(query, params);
 
       res.json({

@@ -159,7 +159,17 @@ export class Product {
     const [result] = await pool.execute('DELETE FROM products WHERE id = ?', [id]);
     return result.affectedRows > 0;
   }
-
+  static async hasSerialNumbers(productId) {
+    const pool = getPool();
+    const [rows] = await pool.execute(
+      // Checks if any serial number exists for the given product_id
+      'SELECT COUNT(*) as count FROM serial_numbers WHERE product_id = ?',
+      [productId]
+    );
+    // Returns true if count > 0, false otherwise
+    return rows[0].count > 0;
+  }
+  
   static async getCategories() {
     const pool = getPool();
     const [rows] = await pool.execute(

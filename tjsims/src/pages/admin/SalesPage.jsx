@@ -87,7 +87,6 @@ const SalesPage = () => {
     window.localStorage.setItem(SAVED_CUSTOMERS_KEY, JSON.stringify(savedCustomers));
   }, [savedCustomers]);
 
-  // Handle clearing payment fields when option changes
   useEffect(() => {
     if (paymentOption !== 'Cash' && paymentOption !== 'Cash on Delivery') {
       setTenderedAmount('');
@@ -95,7 +94,7 @@ const SalesPage = () => {
     if (paymentOption !== 'GCash') {
       setGcashRef('');
     }
-    if (paymentOption === 'Cash on Delivery') { 
+    if (paymentOption === 'Cash on Delivery') { // Clear tendered amount when COD is selected
         setTenderedAmount('');
     }
   }, [paymentOption]);
@@ -443,6 +442,7 @@ const SalesPage = () => {
     if (saleItems.length === 0) return;
 
     try {
+      // Add all stock back for each item in sale LOCALLY
       let tempProducts = [...products];
       let tempInventory = { ...inventory };
 
@@ -453,22 +453,31 @@ const SalesPage = () => {
             : p
         );
 
-        tempInventory = {
-          ...tempInventory,
-          [item.product_id]: {
-            ...prev[item.product_id],
-            stock: tempInventory[item.product_id].stock + item.quantity
-          }
-        };
-      }
+        const productId = item.product_id;
+        
+        // --- FIXED: Safely update stock in the temporary inventory map ---
+        const currentInv = tempInventory[productId];
+        if (currentInv) {
+             tempInventory[productId] = {
+                ...currentInv,
+                stock: (currentInv.stock || 0) + item.quantity
+            };
+        } else {
+            // If item wasn't in inventory (e.g. new product), ensure stock is at least 0 + added qty
+            tempInventory[productId] = { stock: item.quantity, reorder_point: 10 };
+        }
+        // --- END FIXED ---
+    }
 
       setProducts(tempProducts);
       setInventory(tempInventory);
+
+      // Clear the sale
       setSaleItems([]);
 
     } catch (error) {
       console.error('Error clearing sale:', error);
-      alert('Failed to clear sale. Please try again.');
+      // Removed the alert here to prevent the follow-up popup.
     }
   };
 
@@ -581,7 +590,6 @@ const SalesPage = () => {
     }
     const total = getSaleTotal();
     
-    // --- PAYMENT VALIDATION ---
     const isCOD = paymentOption === 'Cash on Delivery'; 
     if (!isCOD) {
       const payAmt = parseFloat(tenderedAmount);
@@ -590,17 +598,14 @@ const SalesPage = () => {
         return;
       }
     }
-    // --- END PAYMENT VALIDATION ---
 
     try {
       setSubmitting(true);
 
-      // Enforce shipping option rule
       if (getSaleTotal() < 5000 && shippingOption !== 'Company Delivery') { 
-        // NOTE: setShippingOption doesn't affect this transaction, only clears client-side warning next time.
+        setShippingOption('In-Store Pickup');
       }
       
-      // --- STATUS DETERMINATION ---
       let newOrderStatus;
       let newPaymentStatus;
 
@@ -611,11 +616,9 @@ const SalesPage = () => {
         newOrderStatus = 'Completed';
         newPaymentStatus = 'Paid';
       } else {
-        // Company Delivery (paid in advance) or GCash
         newOrderStatus = 'Processing'; 
         newPaymentStatus = 'Paid';
       }
-      // --- END STATUS DETERMINATION ---
 
       const saleData = {
         customer_name: fullName,
@@ -642,7 +645,6 @@ const SalesPage = () => {
       const result = await salesAPI.createSale(saleData);
       const saleNo = result?.data?.sale_number || 'N/A';
 
-      // Auto-generate and download receipt
       try {
         const doc = await generateSaleReceipt({
           saleNumber: saleNo,
@@ -663,6 +665,7 @@ const SalesPage = () => {
 
       alert(`Sale confirmed successfully!\nSale Number: ${saleNo}\nTotal: ₱${getSaleTotal().toLocaleString()}\nCustomer: ${fullName}`);
       
+      // Clear sale and refresh local state
       await clearSale(); 
       clearCustomerInfo();
 
@@ -679,10 +682,9 @@ const SalesPage = () => {
     }
   };
 
-  // --- SAFE BOOLEAN for disabled button state ---
   const isCOD = paymentOption === 'Cash on Delivery'; 
   const isPaymentInvalidOrMissing = isCOD
-    ? false // COD requires no payment at this step
+    ? false 
     : !paymentOption || 
       Number.isNaN(parseFloat(tenderedAmount)) || 
       (parseFloat(tenderedAmount) < getSaleTotal());
@@ -1179,7 +1181,6 @@ const SalesPage = () => {
               <div className="action-buttons-right">
                 <button
                   onClick={confirmSale}
-                  // --- FIXED: Use pre-calculated boolean for cleaner logic ---
                   disabled={submitting || saleItems.length === 0 || !paymentOption || isPaymentInvalidOrMissing}
                   className="btn btn-primary"
                 >

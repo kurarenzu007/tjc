@@ -687,7 +687,11 @@ const OrdersPage = () => {
       {/* Return Modal */}
       {isReturnModalOpen && orderToReturn && (
         <div className="modal-overlay" onClick={handleCloseReturnModal}>
-          <div className="modal-content" style={{ maxWidth: '800px' }}>
+          <div 
+            className="modal-content" 
+            style={{ maxWidth: '800px' }} 
+            onClick={(e) => e.stopPropagation()} // <-- FIX: Stop clicks inside content from closing the modal
+          >
             <div className="modal-header">
               <h2>Process Return for Order: {orderToReturn.sale_number}</h2>
               <button onClick={handleCloseReturnModal} className="close-btn">×</button>

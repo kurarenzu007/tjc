@@ -3,9 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { BsSearch } from 'react-icons/bs';
 import '../../styles/DeliveryPortal.css';
 import tcjLogo from '../../assets/tcj_logo.png';
-// --- FIX: Ensure all required APIs are imported ---
 import { salesAPI } from '../../utils/api';
-import { serialNumberAPI } from '../../utils/serialNumberApi'; // <-- CRITICAL: Must be imported
+import { serialNumberAPI } from '../../utils/serialNumberApi';
 
 const DeliveryPortal = () => {
   const navigate = useNavigate();
@@ -22,26 +21,28 @@ const DeliveryPortal = () => {
   // --- START FETCH ORDERS FUNCTION ---
   const fetchOrders = async () => {
     try {
-      // 1. Fetch all sales marked as 'Processing'
-      const list = await salesAPI.getSales({ status: 'Processing' });
-      const filtered = (list || []).filter(s => {
-        const addr = (s.address || '').toLowerCase();
-        // Filter orders based on hardcoded delivery regions
-        return addr.includes('pampanga') || addr.includes('bulacan') || addr.includes('manila');
+      // 1. Fetch sales that have 'Company Delivery' type (Backend filter is applied)
+      const list = await salesAPI.getSales({ 
+        delivery_type: 'Company Delivery' 
       });
+      
+      // 2. Filter the raw list to keep only active delivery statuses (Pending or Processing)
+      const activeDeliveryList = (list || []).filter(s => 
+        s.status === 'Pending' || s.status === 'Processing'
+      );
 
-      // 2. Fetch items and serials for all relevant orders concurrently
+      // 3. Address filter (REMOVED: Using original list as primary filter)
+      const filtered = activeDeliveryList;
+
+      // 4. Fetch items/serials and map
       const mappedPromises = filtered.map(async (s) => {
         let productListString = 'See details';
         let items = [];
         try {
-          // Fetch order items
           const itemsResponse = await salesAPI.getSaleItems(s.id);
-          // Fetch all serial numbers for the entire sale
           const serialsResponse = await serialNumberAPI.getBySaleId(s.id);
           const allSerials = serialsResponse.data || [];
 
-          // Merge serial numbers into their corresponding items
           items = itemsResponse.map(item => {
             const serial_numbers = allSerials
                 .filter(sn => sn.sale_item_id === item.id)
@@ -50,10 +51,8 @@ const DeliveryPortal = () => {
             return { ...item, serial_numbers };
           });
           
-          // Format the product list (for the main table view)
           productListString = (items || []).map(item => {
-            const serialSuffix = (item.serial_numbers?.length > 0) ? ` - Serials: ${item.serial_numbers.join(', ')}` : '';
-            return `${item.product_name} (x${item.quantity})${serialSuffix}`;
+            return `${item.product_name} (x${item.quantity})`;
           }).join(', ');
 
         } catch (e) {
@@ -66,9 +65,10 @@ const DeliveryPortal = () => {
           customerName: s.customer_name,
           orderDate: new Date(s.created_at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }),
           productList: productListString, 
-          items: items,
+          items: items, 
           paymentStatus: s.payment_status,
           paymentMethod: s.payment,
+          // Correct Status Display Mapping:
           orderStatus: s.status === 'Pending' ? 'Processing' : (s.status === 'Processing' ? 'Out for delivery' : s.status),
           address: s.address || '',
           contact: s.contact || '',
@@ -77,6 +77,7 @@ const DeliveryPortal = () => {
       });
 
       const mapped = await Promise.all(mappedPromises);
+
       return mapped;
 
     } catch (e) {
@@ -156,7 +157,7 @@ const DeliveryPortal = () => {
       await salesAPI.updateSale(selectedOrder.saleId, { status: 'Completed' });
       
       // Refresh orders by calling the reusable fetchOrders function
-      const mapped = await fetchOrders(); 
+      const mapped = await fetchOrders();
       setOrders(mapped);
       
       setDeliveryProof(null);
@@ -205,7 +206,6 @@ const DeliveryPortal = () => {
 
   return (
     <div className="delivery-portal">
-      {/* Navigation Bar */}
       <nav className="delivery-navbar">
         <div className="navbar-left">
           <img src={tcjLogo} alt="TJC Logo" className="navbar-logo" />

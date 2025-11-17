@@ -2,11 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { BsCartPlus, BsTrash, BsSearch } from 'react-icons/bs';
 import Navbar from '../../components/admin/Navbar';
 import '../../styles/SalesPage.css';
-// --- THIS IS THE FIX ---
-// We must import serialNumberAPI from its own file
-import { salesAPI, inventoryAPI } from '../../utils/api';
+import { salesAPI, inventoryAPI, settingsAPI } from '../../utils/api'; 
 import { serialNumberAPI } from '../../utils/serialNumberApi.js'; 
-// --- END OF FIX ---
 import { generateSaleReceipt } from '../../utils/pdfGenerator';
 
 const SalesPage = () => {
@@ -23,7 +20,7 @@ const SalesPage = () => {
   const [paymentOption, setPaymentOption] = useState('');
   const [shippingOption, setShippingOption] = useState('In-Store Pickup');
   
-  const [paymentStatus, setPaymentStatus] = useState('Paid');
+  // NOTE: paymentStatus state is unused, as status is calculated in confirmSale
   const [address, setAddress] = useState('Manila');
   const [addressDetails, setAddressDetails] = useState('');
   const [tenderedAmount, setTenderedAmount] = useState('');
@@ -41,41 +38,65 @@ const SalesPage = () => {
   });
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
 
-  // --- NEW STATE ---
-  // Add state for the customer search input
+  // --- Payment Settings State ---
+  const [paymentSettings, setPaymentSettings] = useState({
+    cash_enabled: true,
+    gcash_enabled: true,
+    cod_enabled: true,
+  });
+  // --- END Payment Settings State ---
+
   const [customerSearch, setCustomerSearch] = useState('');
-  // Add state to show/hide the customer results dropdown
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
 
-  // New state for API integration
   const [products, setProducts] = useState([]);
   const [inventory, setInventory] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Serial number selection state
   const [serialModalOpen, setSerialModalOpen] = useState(false);
   const [selectedProductForSerial, setSelectedProductForSerial] = useState(null);
   const [availableSerials, setAvailableSerials] = useState([]);
   const [selectedSerials, setSelectedSerials] = useState({});
 
-  // Fetch products and inventory data on component mount
+  // Fetch data on component mount
   useEffect(() => {
     fetchProductsAndInventory();
+    fetchPaymentSettings();
   }, []);
+
+  const fetchPaymentSettings = async () => {
+    try {
+      const response = await settingsAPI.get(); 
+      if (response.success && response.data) {
+        const s = response.data;
+        setPaymentSettings({
+          cash_enabled: !!s.cash_enabled,
+          gcash_enabled: !!s.gcash_enabled,
+          cod_enabled: !!s.cod_enabled,
+        });
+      }
+    } catch (e) {
+      console.error('Failed to fetch payment settings:', e);
+    }
+  };
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
     window.localStorage.setItem(SAVED_CUSTOMERS_KEY, JSON.stringify(savedCustomers));
   }, [savedCustomers]);
 
+  // Handle clearing payment fields when option changes
   useEffect(() => {
-    if (!paymentOption) {
+    if (paymentOption !== 'Cash' && paymentOption !== 'Cash on Delivery') {
       setTenderedAmount('');
     }
     if (paymentOption !== 'GCash') {
       setGcashRef('');
+    }
+    if (paymentOption === 'Cash on Delivery') { 
+        setTenderedAmount('');
     }
   }, [paymentOption]);
 
@@ -84,7 +105,6 @@ const SalesPage = () => {
       setLoading(true);
       setError(null);
 
-      // Fetch products with inventory data
       const response = await inventoryAPI.getProductsWithInventory();
 
       const productsData = response.data?.products || [];
@@ -96,7 +116,6 @@ const SalesPage = () => {
 
       setProducts(productsWithInventory);
 
-      // Create inventory lookup map
       const inventoryMap = {};
       productsWithInventory.forEach(product => {
         inventoryMap[product.product_id] = {
@@ -121,33 +140,28 @@ const SalesPage = () => {
     product.brand.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // --- NEW FUNCTION to handle all quantity changes (buttons and input) ---
   const setProductQuantity = (productId, newQtyValue) => {
     const product = products.find(p => p.product_id === productId);
     if (!product) return;
 
     let newQty = parseInt(newQtyValue, 10);
 
-    // If input is empty or invalid, default to 1
     if (isNaN(newQty) || newQty < 1) {
       setQuantities(prev => ({
         ...prev,
         [productId]: 1
       }));
-      return; // Exit here, don't proceed with 0 or NaN
+      return; 
     }
 
-    // Enforce maximum of available stock
     if (newQty > product.stock) {
       alert(`Cannot exceed available stock (${product.stock} units available)`);
       newQty = product.stock;
     }
 
-    // Handle serial numbers when decreasing quantity
     if (product.requires_serial) {
       const currentSerials = selectedSerials[productId] || [];
       if (currentSerials.length > newQty) {
-        // Auto-remove excess serials from the end
         const removedSerials = currentSerials.slice(newQty);
         setSelectedSerials({
           ...selectedSerials,
@@ -158,7 +172,6 @@ const SalesPage = () => {
         }
       }
     }
-    // NOTE: The annoying alert for *increasing* quantity is now removed.
 
     setQuantities(prev => ({
       ...prev,
@@ -166,12 +179,9 @@ const SalesPage = () => {
     }));
   };
 
-  // --- UPDATED FUNCTION to use the new central logic ---
   const handleQuantityChange = (productId, change) => {
     const currentQty = quantities[productId] || 1;
     const newQty = currentQty + change;
-    
-    // Let the new central function handle all validation
     setProductQuantity(productId, newQty);
   };
 
@@ -180,19 +190,16 @@ const SalesPage = () => {
     const quantity = quantities[product.product_id] || 1;
     const productSerials = selectedSerials[product.product_id] || [];
 
-    // Check if product requires serial numbers
     if (product.requires_serial && productSerials.length === 0) {
       alert('Please select serial numbers for this product before adding to sale');
       return;
     }
 
-    // Check if serial count matches quantity for products requiring serials
     if (product.requires_serial && productSerials.length !== quantity) {
       alert(`Please select ${quantity} serial number(s) for this product`);
       return;
     }
 
-    // Check if we have enough stock
     if (product.stock < quantity) {
       alert(`Insufficient stock. Available: ${product.stock}, Requested: ${quantity}`);
       return;
@@ -202,7 +209,6 @@ const SalesPage = () => {
       const existingItem = saleItems.find(item => item.product_id === product.product_id);
 
       if (existingItem) {
-        // Add to existing sale item
         const newSerials = [...(existingItem.serialNumbers || []), ...productSerials];
         setSaleItems(saleItems.map(item =>
           item.product_id === product.product_id
@@ -210,7 +216,6 @@ const SalesPage = () => {
             : item
         ));
       } else {
-        // Add new sale item
         setSaleItems([...saleItems, {
           product_id: product.product_id,
           name: product.name,
@@ -221,26 +226,22 @@ const SalesPage = () => {
         }]);
       }
 
-      // Clear selected serials for this product
       setSelectedSerials(prev => ({
         ...prev,
         [product.product_id]: []
       }));
 
-      // Reset quantity
       setQuantities(prev => ({
         ...prev,
         [product.product_id]: 1
       }));
 
-      // Update local state to reflect stock change
       setProducts(products.map(p =>
         p.product_id === product.product_id
           ? { ...p, stock: p.stock - quantity }
           : p
       ));
 
-      // Update inventory map
       setInventory(prev => ({
         ...prev,
         [product.product_id]: {
@@ -260,17 +261,14 @@ const SalesPage = () => {
     if (!itemToRemove) return;
 
     try {
-      // Remove from sale
       setSaleItems(saleItems.filter(item => item.product_id !== productId));
 
-      // Update local state to reflect stock change
       setProducts(products.map(p =>
         p.product_id === productId
           ? { ...p, stock: p.stock + itemToRemove.quantity }
           : p
       ));
 
-      // Update inventory map
       setInventory(prev => ({
         ...prev,
         [productId]: {
@@ -292,21 +290,17 @@ const SalesPage = () => {
     const newQuantity = Math.max(1, item.quantity + change);
     const quantityDifference = newQuantity - item.quantity;
 
-    // If quantity is not changing, return early
     if (quantityDifference === 0) return;
 
-    // Check if product requires serial numbers
     const product = products.find(p => p.product_id === productId);
     const hasSerials = item.serialNumbers && item.serialNumbers.length > 0;
 
-    // Prevent changing quantity if item has serial numbers
     if (hasSerials && product?.requires_serial) {
       alert(`Cannot change quantity for items with serial numbers. Please remove the item and add it again with the correct quantity and serials.`);
       return;
     }
 
     try {
-      // Check stock availability for increases
       if (quantityDifference > 0) {
         const currentStock = inventory[productId]?.stock || 0;
         if (currentStock < quantityDifference) {
@@ -315,21 +309,18 @@ const SalesPage = () => {
         }
       }
 
-      // Update sale
       setSaleItems(saleItems.map(saleItem =>
         saleItem.product_id === productId
           ? { ...saleItem, quantity: newQuantity }
           : saleItem
       ));
 
-      // Update local state to reflect stock change
       setProducts(products.map(p =>
         p.product_id === productId
           ? { ...p, stock: p.stock - quantityDifference }
           : p
       ));
 
-      // Update inventory map
       setInventory(prev => ({
         ...prev,
         [productId]: {
@@ -353,45 +344,32 @@ const SalesPage = () => {
     setAddressDetails(customer.addressDetails || '');
   };
 
-  // --- MODIFIED: handleSelectCustomer ---
-  // This function is now called when a user CLICKS an item from the new dropdown.
-  // It receives the full customer object instead of just an ID.
   const handleSelectCustomer = (customer) => {
     setSelectedCustomerId(customer.id);
-    fillCustomerFields(customer); // This fills the form fields
-    // Set the input text to the selected customer's name and close the dropdown
+    fillCustomerFields(customer);
     setCustomerSearch(`${customer.lastName}, ${customer.firstName} - ${customer.contactNumber}`);
     setIsCustomerDropdownOpen(false);
   };
 
-  // --- NEW: handleCustomerSearchChange ---
-  // This function runs every time the user types in the new customer search box
   const handleCustomerSearchChange = (e) => {
     const value = e.target.value;
     setCustomerSearch(value);
-    setIsCustomerDropdownOpen(true); // Open the dropdown as they type
+    setIsCustomerDropdownOpen(true); 
     
-    // If the user is typing, it means they haven't selected a customer yet,
-    // so we should clear any previously selected customer ID.
     if (selectedCustomerId) {
       setSelectedCustomerId('');
-      // Optionally clear other fields
       setAddress('Manila');
       setAddressDetails('');
     }
   }
 
-  // --- NEW: filteredSavedCustomers ---
-  // This uses useMemo to create a filtered list of customers based on the search input
   const filteredSavedCustomers = useMemo(() => {
     const searchLower = customerSearch.toLowerCase();
 
-    // If the search bar is empty, show all customers
     if (!searchLower) {
       return savedCustomers;
     }
 
-    // Otherwise, filter by name or contact number
     return savedCustomers.filter(c =>
       c.lastName.toLowerCase().includes(searchLower) ||
       c.firstName.toLowerCase().includes(searchLower) ||
@@ -465,7 +443,6 @@ const SalesPage = () => {
     if (saleItems.length === 0) return;
 
     try {
-      // Add all stock back for each item in sale LOCALLY
       let tempProducts = [...products];
       let tempInventory = { ...inventory };
 
@@ -479,7 +456,7 @@ const SalesPage = () => {
         tempInventory = {
           ...tempInventory,
           [item.product_id]: {
-            ...tempInventory[item.product_id],
+            ...prev[item.product_id],
             stock: tempInventory[item.product_id].stock + item.quantity
           }
         };
@@ -487,8 +464,6 @@ const SalesPage = () => {
 
       setProducts(tempProducts);
       setInventory(tempInventory);
-
-      // Clear the sale
       setSaleItems([]);
 
     } catch (error) {
@@ -497,8 +472,6 @@ const SalesPage = () => {
     }
   };
 
-  // --- MODIFIED: clearCustomerInfo ---
-  // We need to also clear the new customerSearch state
   const clearCustomerInfo = () => {
     setLastName('');
     setFirstName('');
@@ -509,7 +482,7 @@ const SalesPage = () => {
     setTenderedAmount('');
     setGcashRef('');
     setSelectedCustomerId('');
-    setCustomerSearch(''); // <-- ADD THIS LINE
+    setCustomerSearch(''); 
     setPaymentOption('');
   };
 
@@ -518,14 +491,12 @@ const SalesPage = () => {
     setSerialModalOpen(true);
     
     try {
-      // Fetch available serial numbers from backend
       const response = await serialNumberAPI.getAvailableSerials(product.product_id);
       const allAvailableSerials = response.data || [];
       
       const saleItem = saleItems.find(item => item.product_id === product.product_id);
       const serialsInSale = saleItem?.serialNumbers || [];
       
-      // Filter out serials that are already in the sale
       const filteredSerials = allAvailableSerials.filter(
         serial => !serialsInSale.includes(serial.serial_number)
       );
@@ -556,19 +527,16 @@ const SalesPage = () => {
     const requiredQty = quantities[productId] || 1;
     
     if (currentSerials.includes(serialNumber)) {
-      // Remove serial if already selected
       setSelectedSerials({
         ...selectedSerials,
         [productId]: currentSerials.filter(s => s !== serialNumber)
       });
     } else {
-      // Check if we've reached the limit
       if (currentSerials.length >= requiredQty) {
         alert(`You can only select ${requiredQty} serial number(s) for this quantity. Please deselect one first or increase the quantity.`);
         return;
       }
       
-      // Add serial if not selected and under limit
       setSelectedSerials({
         ...selectedSerials,
         [productId]: [...currentSerials, serialNumber]
@@ -588,7 +556,6 @@ const SalesPage = () => {
       return;
     }
     
-    // Validate that selected count matches required quantity
     if (selectedCount !== requiredQty) {
       alert(`Please select exactly ${requiredQty} serial number(s). Currently selected: ${selectedCount}`);
       return;
@@ -613,21 +580,42 @@ const SalesPage = () => {
       return;
     }
     const total = getSaleTotal();
-    const payAmt = parseFloat(tenderedAmount);
-    if (Number.isNaN(payAmt) || payAmt < total) {
-      alert('Customer Payment Amount must be a valid decimal and at least equal to the sale total.');
-      return;
+    
+    // --- PAYMENT VALIDATION ---
+    const isCOD = paymentOption === 'Cash on Delivery'; 
+    if (!isCOD) {
+      const payAmt = parseFloat(tenderedAmount);
+      if (Number.isNaN(payAmt) || payAmt < total) {
+        alert('Customer Payment Amount must be a valid decimal and at least equal to the sale total.');
+        return;
+      }
     }
+    // --- END PAYMENT VALIDATION ---
 
     try {
       setSubmitting(true);
 
       // Enforce shipping option rule
-      if (getSaleTotal() < 5000 && shippingOption !== 'In-Store Pickup') {
-        setShippingOption('In-Store Pickup');
+      if (getSaleTotal() < 5000 && shippingOption !== 'Company Delivery') { 
+        // NOTE: setShippingOption doesn't affect this transaction, only clears client-side warning next time.
       }
       
-      const newOrderStatus = shippingOption === 'In-Store Pickup' ? 'Completed' : 'Processing';
+      // --- STATUS DETERMINATION ---
+      let newOrderStatus;
+      let newPaymentStatus;
+
+      if (isCOD) {
+        newOrderStatus = 'Pending';
+        newPaymentStatus = 'Unpaid';
+      } else if (shippingOption === 'In-Store Pickup') {
+        newOrderStatus = 'Completed';
+        newPaymentStatus = 'Paid';
+      } else {
+        // Company Delivery (paid in advance) or GCash
+        newOrderStatus = 'Processing'; 
+        newPaymentStatus = 'Paid';
+      }
+      // --- END STATUS DETERMINATION ---
 
       const saleData = {
         customer_name: fullName,
@@ -637,7 +625,7 @@ const SalesPage = () => {
         contact: contactNumber,
         payment: paymentOption,
         delivery_type: shippingOption,
-        payment_status: paymentStatus,
+        payment_status: newPaymentStatus,
         status: newOrderStatus,
         address: addressDetails ? `${addressDetails}, ${address}` : address,
         total: getSaleTotal(),
@@ -647,13 +635,12 @@ const SalesPage = () => {
           brand: item.brand,
           price: item.price,
           quantity: item.quantity,
-          serialNumbers: item.serialNumbers || [] // Include serial numbers
+          serialNumbers: item.serialNumbers || []
         }))
       };
 
       const result = await salesAPI.createSale(saleData);
       const saleNo = result?.data?.sale_number || 'N/A';
-      const saleId = result?.data?.sale_id;
 
       // Auto-generate and download receipt
       try {
@@ -663,8 +650,8 @@ const SalesPage = () => {
           items: saleItems,
           totalAmount: getSaleTotal(),
           paymentMethod: paymentOption,
-          tenderedAmount: parseFloat(tenderedAmount || 0),
-          changeAmount: Math.max(0, parseFloat(tenderedAmount || 0) - getSaleTotal()),
+          tenderedAmount: isCOD ? getSaleTotal() : parseFloat(tenderedAmount || 0), 
+          changeAmount: isCOD ? 0 : Math.max(0, parseFloat(tenderedAmount || 0) - getSaleTotal()),
           address: addressDetails ? `${addressDetails}, ${address}` : address,
           shippingOption,
           createdAt: new Date()
@@ -679,9 +666,8 @@ const SalesPage = () => {
       await clearSale(); 
       clearCustomerInfo();
 
-      // Show refresh indicator and refresh inventory data
       setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 500)); // Small delay for visual feedback
+      await new Promise(resolve => setTimeout(resolve, 500));
       await fetchProductsAndInventory();
 
     } catch (error) {
@@ -692,6 +678,14 @@ const SalesPage = () => {
       setSubmitting(false);
     }
   };
+
+  // --- SAFE BOOLEAN for disabled button state ---
+  const isCOD = paymentOption === 'Cash on Delivery'; 
+  const isPaymentInvalidOrMissing = isCOD
+    ? false // COD requires no payment at this step
+    : !paymentOption || 
+      Number.isNaN(parseFloat(tenderedAmount)) || 
+      (parseFloat(tenderedAmount) < getSaleTotal());
 
   return (
     <div className="admin-layout">
@@ -717,7 +711,6 @@ const SalesPage = () => {
             <div className="products-section">
               <div className="products-header">
                 <h2>Product Catalog</h2>
-                {/* Use the same search-box as other pages */}
                 <div className="search-box">
                   <input
                     type="text"
@@ -726,7 +719,6 @@ const SalesPage = () => {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="search-input"
                   />
-                  {/* Note: The button is how the yellow icon is added */}
                   <button className="search-btn" type="button">
                     <BsSearch />
                   </button>
@@ -767,7 +759,7 @@ const SalesPage = () => {
                                 product.stock <= (product.reorder_point || 10) ? 'low-stock' : 
                                 'good-stock'
                               }>
-                                {product.stock} {/* <-- This is the only line that changed */}
+                                {product.stock}
                               </span>
                             </td>
 
@@ -782,7 +774,6 @@ const SalesPage = () => {
                                     -
                                   </button>
                                   
-                                  {/* --- MODIFIED: Replaced <span> with <input> --- */}
                                   <input
                                     type="number"
                                     value={quantities[product.product_id] || 1}
@@ -791,7 +782,6 @@ const SalesPage = () => {
                                     min="1"
                                     max={product.stock}
                                   />
-                                  {/* --- END OF MODIFICATION --- */}
                                   
                                   <button
                                     onClick={() => handleQuantityChange(product.product_id, 1)}
@@ -1115,8 +1105,17 @@ const SalesPage = () => {
                       className="form-select"
                     >
                       <option value="">Select payment option</option>
-                      <option value="Cash">Cash</option>
-                      <option value="GCash">GCash</option>
+                      {/* --- CONDITIONAL RENDERING BASED ON SETTINGS --- */}
+                      {paymentSettings.cash_enabled && (
+                        <option value="Cash">Cash (In-Store / Paid in Advance)</option>
+                      )}
+                      {paymentSettings.gcash_enabled && (
+                        <option value="GCash">GCash</option>
+                      )}
+                      {paymentSettings.cod_enabled && (
+                        <option value="Cash on Delivery">Cash on Delivery</option> 
+                      )}
+                      {/* --- END CONDITIONAL RENDERING --- */}
                     </select>
                   </div>
                   <div className="form-group">
@@ -1134,19 +1133,22 @@ const SalesPage = () => {
                   </div>
                 </div>
                 <div className="form-row">
-                  <div className="form-group">
-                    <label>Customer Payment Amount</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={tenderedAmount}
-                      onChange={(e) => setTenderedAmount(e.target.value)}
-                      className="form-input"
-                      placeholder={!paymentOption ? 'Select payment option first' : paymentOption === 'Cash' ? 'Cash tendered' : 'Amount paid'}
-                      disabled={!paymentOption}
-                    />
-                  </div>
+                  {/* --- MODIFIED: Only show payment amount if not COD --- */}
+                  {paymentOption !== 'Cash on Delivery' && ( 
+                    <div className="form-group">
+                      <label>Customer Payment Amount</label>
+                      <input
+                        type="number"
+                        min={0} 
+                        step={0.01} 
+                        value={tenderedAmount}
+                        onChange={(e) => setTenderedAmount(e.target.value)}
+                        className="form-input"
+                        placeholder={!paymentOption ? 'Select payment option first' : paymentOption === 'Cash' ? 'Cash tendered' : 'Amount paid'}
+                        disabled={!paymentOption}
+                      />
+                    </div>
+                  )}
                   {paymentOption === 'GCash' && (
                     <div className="form-group">
                       <label>GCash Reference Number</label>
@@ -1177,7 +1179,8 @@ const SalesPage = () => {
               <div className="action-buttons-right">
                 <button
                   onClick={confirmSale}
-                  disabled={submitting || saleItems.length === 0 || !paymentOption || Number.isNaN(parseFloat(tenderedAmount)) || parseFloat(tenderedAmount) < getSaleTotal()}
+                  // --- FIXED: Use pre-calculated boolean for cleaner logic ---
+                  disabled={submitting || saleItems.length === 0 || !paymentOption || isPaymentInvalidOrMissing}
                   className="btn btn-primary"
                 >
                   {submitting ? 'Processing...' : 'Confirm Sale'}

@@ -263,7 +263,7 @@ export class Inventory {
     }
   }
 
-  static async returnToSupplier({ supplier, returnedBy, returnDate, products }) {
+  static async returnToSupplier({ supplier, returnedBy, returnDate, products, reason }) {
     const pool = getPool();
     const connection = await pool.getConnection();
 
@@ -337,12 +337,12 @@ export class Inventory {
             `UPDATE serial_numbers 
              SET status = 'defective', notes = ?, updated_at = CURRENT_TIMESTAMP
              WHERE serial_number = ?`,
-            [`Returned to Supplier: ${supplier}`, serialNumber]
+            [`Returned to Supplier: ${supplier}. Reason: ${reason}`, serialNumber]
           );
         }
 
         // Record transaction
-        const notes = `Return to Supplier - Supplier: ${supplier} | Serial: ${serialNumber || 'N/A'} | Returned by: ${returnedBy}`;
+        const notes = `Return to Supplier - Reason: ${reason || 'N/A'} | Supplier: ${supplier} | Serial: ${serialNumber || 'N/A'} | Returned by: ${returnedBy}`;
         const transactionId = `TRX-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
         await connection.execute(
           `INSERT INTO inventory_transactions (

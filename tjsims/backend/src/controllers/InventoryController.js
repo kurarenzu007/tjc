@@ -130,7 +130,7 @@ export const InventoryController = {
   // Return to supplier for multiple products
   returnToSupplier: async (req, res) => {
     try {
-      const { supplier, returnedBy, returnDate, products } = req.body;
+      const { supplier, returnedBy, returnDate, products, reason } = req.body;
 
       if (!products || products.length === 0) {
         return res.status(400).json({
@@ -150,7 +150,8 @@ export const InventoryController = {
         supplier,
         returnedBy,
         returnDate,
-        products
+        products,
+        reason
       });
 
       res.json({

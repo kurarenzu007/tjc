@@ -1,9 +1,60 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Navbar from '../../components/admin/Navbar';
-import { BsSearch, BsPlus, BsPencil } from 'react-icons/bs';
+import { BsSearch, BsPlus, BsPencil, BsTrash } from 'react-icons/bs';
 import '../../styles/ProductPage.css';
 import { productAPI, authAPI } from '../../utils/api.js';
-import { serialNumberAPI } from '../../utils/serialNumberApi.js'; // <-- 1. IMPORT SERIAL API
+import { serialNumberAPI } from '../../utils/serialNumberApi.js';
+
+// --- CUSTOM MESSAGE BOX COMPONENT ---
+const MessageBox = ({ isOpen, title, message, type, onClose, onConfirm }) => {
+  if (!isOpen) return null;
+
+  // Dynamic styles based on alert type
+  let headerColor = '#f8f9fa'; // Default (Info)
+  let titleColor = '#2c3e50';
+  
+  if (type === 'error') {
+    headerColor = '#fee2e2';
+    titleColor = '#b91c1c';
+  } else if (type === 'success') {
+    headerColor = '#dcfce7';
+    titleColor = '#166534';
+  } else if (type === 'warning') {
+    headerColor = '#fff7ed';
+    titleColor = '#c2410c';
+  }
+
+  return (
+    <div className="modal-overlay" style={{ zIndex: 9999 }}>
+      <div className="modal-content" style={{ maxWidth: '400px', width: '90%', borderRadius: '12px', overflow: 'hidden' }}>
+        <div className="modal-header" style={{ backgroundColor: headerColor, borderBottom: '1px solid rgba(0,0,0,0.05)', padding: '15px 20px' }}>
+          <h3 style={{ color: titleColor, fontSize: '1.1rem', margin: 0, fontWeight: '600' }}>{title}</h3>
+          <button onClick={onClose} className="close-btn">×</button>
+        </div>
+        <div className="modal-body" style={{ padding: '25px 20px' }}>
+          <p style={{ margin: 0, fontSize: '0.95rem', color: '#4b5563', lineHeight: '1.5' }}>{message}</p>
+        </div>
+        <div className="modal-actions" style={{ padding: '15px 20px', backgroundColor: '#f9fafb' }}>
+          {onConfirm ? (
+            <>
+              <button onClick={onClose} className="cancel-btn">Cancel</button>
+              <button 
+                onClick={() => { onConfirm(); onClose(); }} 
+                className="confirm-btn"
+                style={{ backgroundColor: type === 'error' || type === 'warning' ? '#dc3545' : 'var(--color-primary)' }}
+              >
+                Confirm
+              </button>
+            </>
+          ) : (
+            <button onClick={onClose} className="confirm-btn" style={{ marginLeft: 'auto' }}>OK</button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+// ------------------------------------
 
 const ProductPage = () => {
   // State for products
@@ -22,10 +73,27 @@ const ProductPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddMode, setIsAddMode] = useState(true);
 
-  // --- 2. MODIFIED STATE FOR CLARITY ---
   const [isCheckingSerials, setIsCheckingSerials] = useState(false);
-  // This state is true only if serials exist with status 'sold' or 'defective'
   const [hasUnremovableSerials, setHasUnremovableSerials] = useState(false);
+
+  // --- Message Box State ---
+  const [msgBox, setMsgBox] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info', // info, success, warning, error
+    onConfirm: null // If null, it's just an alert. If set, it's a confirm dialog.
+  });
+
+  // Helper to show message
+  const showMessage = (title, message, type = 'info', onConfirm = null) => {
+    setMsgBox({ isOpen: true, title, message, type, onConfirm });
+  };
+
+  // Helper to close message
+  const closeMessage = () => {
+    setMsgBox(prev => ({ ...prev, isOpen: false }));
+  };
   
   // Pagination constant
   const itemsPerPage = 10;
@@ -33,7 +101,7 @@ const ProductPage = () => {
   // Categories for filter
   const statuses = ['Active', 'Inactive'];
 
-  // Load products and categories/brands on component mount (guard against StrictMode double-invoke)
+  // Load products and categories/brands on component mount
   const didInit = useRef(false);
   useEffect(() => {
     if (didInit.current) return;
@@ -41,7 +109,6 @@ const ProductPage = () => {
     
     const initData = async () => {
       await loadProducts();
-      // Small delay before fetching categories/brands to avoid burst
       await new Promise(r => setTimeout(r, 150));
       await loadCategoriesAndBrands();
     };
@@ -56,7 +123,7 @@ const ProductPage = () => {
     } catch (e) {
       const is429 = (e.message || '').toLowerCase().includes('too many requests');
       if (is429 && attempt < 3) {
-        const delay = (attempt + 1) * 600; // 600ms, 1200ms, 1800ms
+        const delay = (attempt + 1) * 600;
         await new Promise(r => setTimeout(r, delay));
         return withRetry(fn, attempt + 1);
       }
@@ -70,7 +137,6 @@ const ProductPage = () => {
       setLoading(true);
       setError(null);
 
-      // Build filters object
       const filters = {};
       if (searchQuery) filters.search = searchQuery;
       if (selectedCategory && selectedCategory !== 'All Categories') filters.category = selectedCategory;
@@ -91,16 +157,14 @@ const ProductPage = () => {
     }
   };
 
-  // Load categories and brands (staggered to avoid rate limiting)
+  // Load categories and brands
   const loadCategoriesAndBrands = async () => {
     try {
-      // Fetch categories first
       const categoriesResponse = await withRetry(() => productAPI.getCategories());
       if (categoriesResponse.success) {
         setCategories(categoriesResponse.data || []);
       }
       
-      // Small delay before fetching brands
       await new Promise(r => setTimeout(r, 150));
       
       const brandsResponse = await withRetry(() => productAPI.getBrands());
@@ -112,17 +176,14 @@ const ProductPage = () => {
     }
   };
 
-  // Filter products based on search and filters (client-side filtering for better UX)
-  const filteredProducts = products;
-
   // Pagination logic
+  const filteredProducts = products;
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentProducts = filteredProducts.slice(startIndex, endIndex);
   const totalFilteredProducts = filteredProducts.length;
 
-  // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, selectedCategory, selectedBrand, selectedStatus]);
@@ -134,20 +195,17 @@ const ProductPage = () => {
     return () => clearTimeout(t);
   }, [searchQuery, selectedCategory, selectedBrand, selectedStatus]);
 
-  // Handle page change
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
 
-  // --- 3. CREATE A DEDICATED CLOSE MODAL FUNCTION ---
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedProduct(null);
     setIsCheckingSerials(false);
-    setHasUnremovableSerials(false); // Reset
+    setHasUnremovableSerials(false);
   };
 
-  // Handle add new product
   const handleAddProduct = () => {
     setIsAddMode(true);
     setSelectedProduct({
@@ -162,11 +220,10 @@ const ProductPage = () => {
       requires_serial: false
     });
     setIsModalOpen(true);
-    setHasUnremovableSerials(false); // Reset
-    setIsCheckingSerials(false); // Reset
+    setHasUnremovableSerials(false);
+    setIsCheckingSerials(false);
   };
 
-  // --- 4. MODIFIED handleEditProduct TO CHECK FOR SOLD/DEFECTIVE SERIALS ---
   const handleEditProduct = async (product) => {
     setIsAddMode(false);
     setSelectedProduct({ 
@@ -176,31 +233,50 @@ const ProductPage = () => {
     });
     setIsModalOpen(true);
     
-    // --- ADD THIS BLOCK TO CHECK FOR SOLD/DEFECTIVE SERIALS (UX check) ---
-    if (!!product.requires_serial) { // Only check if serials are currently required
+    if (!!product.requires_serial) {
         try {
             setIsCheckingSerials(true);
-            setHasUnremovableSerials(false); // Reset
+            setHasUnremovableSerials(false);
             
-            // Get ALL serials for client-side status check
             const response = await serialNumberAPI.getAllSerials(product.product_id);
             if (response.success && response.data) {
-                // Check if any serial is in a locked state (sold or defective)
                 const soldOrDefectiveExists = response.data.some(s => s.status === 'sold' || s.status === 'defective');
-                setHasUnremovableSerials(soldOrDefectiveExists); // Set lock state based on status
+                setHasUnremovableSerials(soldOrDefectiveExists);
             }
         } catch (error) {
             console.error("Error checking serial numbers:", error);
-            // Don't block the user, but log the error
         } finally {
             setIsCheckingSerials(false);
         }
     }
-    // --- END OF BLOCK ---
   };
 
+  // --- UPDATED: Handle Delete Product Click ---
+  const handleDeleteClick = (product) => {
+    showMessage(
+      'Delete Product',
+      `Are you sure you want to delete "${product.name}"? This action cannot be undone.`,
+      'warning',
+      () => processDeleteProduct(product) // Pass the actual delete function as callback
+    );
+  };
 
-  // Handle form submission
+  // --- UPDATED: Process Delete Logic ---
+  const processDeleteProduct = async (product) => {
+    try {
+      // Use 'product.id' here, which corresponds to the auto-increment ID in the DB
+      const response = await productAPI.deleteProduct(product.id); 
+      if (response.success) {
+        showMessage('Success', 'Product deleted successfully', 'success');
+        await loadProducts();
+      }
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      // Use custom message box for error
+      showMessage('Delete Failed', error.message || 'Unknown error', 'error');
+    }
+  };
+
   const handleSubmitProduct = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
@@ -218,35 +294,33 @@ const ProductPage = () => {
       formData.append('requires_serial', selectedProduct.requires_serial);
       formData.append('vehicle_compatibility', selectedProduct.vehicle_compatibility || '');
       if (selectedProduct.image && selectedProduct.image instanceof File) {
-        // User uploaded a new file
         formData.append('image', selectedProduct.image);
       } else if (!isAddMode && selectedProduct.image) {
-        // User is editing and DID NOT upload a new file, so send the original path
         formData.append('image', selectedProduct.image);
       }
-      // If it's Add Mode and no image, we send nothing, and it will be null. This is correct.
 
       if (isAddMode) {
         const response = await productAPI.createProduct(formData);
         if (response.success) {
-          await loadProducts(); // Refresh the products list
+          await loadProducts();
+          showMessage('Success', 'Product added successfully', 'success');
         }
       } else {
         const response = await productAPI.updateProduct(selectedProduct.product_id, formData);
         if (response.success) {
-          await loadProducts(); // Refresh the products list
+          await loadProducts();
+          showMessage('Success', 'Product updated successfully', 'success');
         }
       }
-      closeModal(); // <-- Use new close function
+      closeModal();
     } catch (error) {
       console.error('Error saving product:', error);
-      alert('Error saving product: ' + error.message);
+      showMessage('Error', 'Error saving product: ' + error.message, 'error');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Handle input changes in modal
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setSelectedProduct({
@@ -255,7 +329,6 @@ const ProductPage = () => {
     });
   };
 
-  // Handle file input change
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     setSelectedProduct({
@@ -264,19 +337,9 @@ const ProductPage = () => {
     });
   };
 
-  const requestImageChange = async () => {
-    try {
-      const savedEmail = localStorage.getItem('userEmail') || '';
-      const email = savedEmail || window.prompt('Enter your email for verification:') || '';
-      if (!email) return;
-      const pwd = window.prompt('Enter your password to change the product image:');
-      if (!pwd) return;
-      await authAPI.login(email, pwd);
-      const input = document.getElementById('product-image');
-      if (input) input.click();
-    } catch (err) {
-      alert('Authentication failed. Image change is not allowed.');
-    }
+  const requestImageChange = () => {
+    const input = document.getElementById('product-image');
+    if (input) input.click();
   };
 
   return (
@@ -285,27 +348,20 @@ const ProductPage = () => {
       <main className="admin-main">
         <div className="admin-container product-page-content">
 
-          {/* Header Section */}
           <div className="page-header">
             <h1 className="page-title">Product Management</h1>
             <p className="page-subtitle">Manage your autoparts inventory and product details</p>
           </div>
 
-          {/* Controls Section */}
           <div className="card">
-            
-              {/* The filter-section is the flex container */}
               <div className="filter-section">
-                
-                  {/* This div just wraps the button */}
                   <div className="add-product-section">
                     <button className="btn btn-warning" onClick={handleAddProduct}>
                       <BsPlus className="plus-icon" />
                       Add Product
                     </button>
-                  </div> {/* <-- This </div> was moved up */}
+                  </div>
 
-                {/* The dropdowns are now direct children of filter-section */}
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
@@ -339,7 +395,6 @@ const ProductPage = () => {
                   ))}
                 </select>
 
-                {/* The search box is also a direct child */}
                 <div className="search-box">
                   <input
                     type="text"
@@ -352,11 +407,9 @@ const ProductPage = () => {
                     <BsSearch className="search-icon" />
                   </button>
                 </div>
-              {/* This </div> now correctly closes filter-section */}
             </div>
           </div>
 
-          {/* Products Table */}
           <div className="table-section">
             {error && (
               <div className="error-state" style={{ padding: '20px', backgroundColor: '#ffebee', color: '#c62828', borderRadius: '4px', marginBottom: '20px' }}>
@@ -426,6 +479,15 @@ const ProductPage = () => {
                               >
                                 <BsPencil />
                               </button>
+                              {/* Delete Button */}
+                              <button
+                                onClick={() => handleDeleteClick(product)}
+                                className="delete-btn"
+                                title="Delete Product"
+                                style={{ marginLeft: '8px', color: '#dc3545', background: 'none', border: 'none', cursor: 'pointer' }}
+                              >
+                                <BsTrash />
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -436,7 +498,6 @@ const ProductPage = () => {
               </div>
             )}
 
-            {/* Pagination and Results Info */}
             <div className="table-footer">
               <div className="results-info">
                 Showing {totalFilteredProducts > 0 ? startIndex + 1 : 0} to {Math.min(endIndex, totalFilteredProducts)} of {totalFilteredProducts} Products
@@ -476,14 +537,23 @@ const ProductPage = () => {
         </div>
       </main>
 
-      {/* Product Modal */}
+      {/* --- CUSTOM MESSAGE BOX --- */}
+      <MessageBox 
+        isOpen={msgBox.isOpen}
+        title={msgBox.title}
+        message={msgBox.message}
+        type={msgBox.type}
+        onClose={closeMessage}
+        onConfirm={msgBox.onConfirm}
+      />
+
       {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
               <h2>{isAddMode ? 'Add Product' : 'Edit Product'}</h2>
               <button
-                onClick={closeModal} // <-- Use new close function
+                onClick={closeModal}
                 className="close-btn"
               >
                 ×
@@ -615,7 +685,6 @@ const ProductPage = () => {
                   </div>
                 </div>
 
-                {/* --- 5. MODIFY THE TOGGLE BLOCK --- */}
                 <div className="form-group">
                   <label>Requires Serial Number</label>
                   <div className="toggle-switch">
@@ -627,7 +696,6 @@ const ProductPage = () => {
                         ...selectedProduct,
                         requires_serial: e.target.checked
                       })}
-                      // Disable the toggle only if checking or if an unremovable serial exists (locking the setting)
                       disabled={isCheckingSerials || hasUnremovableSerials}
                     />
                     <label htmlFor="serial-toggle" className="toggle-label">
@@ -637,7 +705,6 @@ const ProductPage = () => {
                       </span>
                     </label>
                   </div>
-                  {/* Add this helper text */}
                   {isCheckingSerials && (
                     <small style={{ color: '#6c757d', fontSize: '0.85rem', marginTop: '4px', display: 'block' }}>
                       Checking for existing serial numbers...
@@ -648,7 +715,6 @@ const ProductPage = () => {
                       This product has **sold or defective serials** and this setting cannot be changed.
                     </small>
                   )}
-                  {/* --- END OF MODIFICATIONS --- */}
                 </div>
                 
                 <div className="form-group">
@@ -674,7 +740,7 @@ const ProductPage = () => {
               </div>
 
               <div className="modal-actions">
-                <button type="button" onClick={closeModal} className="cancel-btn"> {/* <-- Use new close function */}
+                <button type="button" onClick={closeModal} className="cancel-btn">
                   Cancel
                 </button>
                 <button type="submit" className="save-btn" disabled={isSubmitting}>

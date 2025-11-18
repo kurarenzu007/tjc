@@ -20,7 +20,7 @@ export class Return {
         photoProof,
         additionalNotes,
         processedBy,
-        returnItems // Array of { saleItemId, productId, productName, sku, quantity, price }
+        returnItems // Array of { saleItemId, productId, productName, sku, quantity, price, serialNumbers: [] }
       } = returnData;
 
       // Validate that order exists and can be returned
@@ -120,7 +120,33 @@ export class Return {
           [returnItem.quantity, returnItem.saleItemId]
         );
 
-        // If restocked, update inventory
+        // --- SERIAL NUMBER HANDLING ---
+        if (returnItem.serialNumbers && returnItem.serialNumbers.length > 0) {
+           // Determine the new status for these serial numbers
+           let serialStatus = 'returned'; // Default fallback
+           
+           if (restocked) {
+             serialStatus = 'available';
+           } else if (returnReason === 'Defective/Damaged') {
+             serialStatus = 'defective';
+           }
+
+           for (const serial of returnItem.serialNumbers) {
+             // Update the specific serial number
+             // If restocked (available), we must clear sale_id/sale_item_id so it can be sold again
+             // If defective/returned, we usually keep record or clear it depending on policy. 
+             // Here we clear sale linkage to indicate it's back in possession (even if broken).
+             await connection.execute(
+               `UPDATE serial_numbers 
+                SET status = ?, sale_id = NULL, sale_item_id = NULL, updated_at = NOW(), notes = ?
+                WHERE serial_number = ? AND product_id = ?`,
+               [serialStatus, `Returned from order ${saleNumber}: ${returnReason}`, serial, returnItem.productId]
+             );
+           }
+        }
+        // ------------------------------
+
+        // If restocked, update inventory count
         if (restocked) {
           await connection.execute(
             'UPDATE inventory SET stock = stock + ? WHERE product_id = ?',

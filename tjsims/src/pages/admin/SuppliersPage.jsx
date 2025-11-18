@@ -13,6 +13,8 @@ const SuppliersPage = () => {
     name: '', contact_person: '', email: '', phone: '', address: '', status: 'Active'
   });
   const [selectedId, setSelectedId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   useEffect(() => {
     fetchSuppliers();
@@ -71,6 +73,19 @@ const SuppliersPage = () => {
     setSelectedId(null);
   };
 
+  // Pagination logic
+  const totalPages = Math.ceil(suppliers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, suppliers.length);
+  const currentSuppliers = suppliers.slice(startIndex, endIndex);
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      document.querySelector('.table-container')?.scrollTo(0, 0);
+    }
+  };
+
   return (
     <div className="admin-layout">
       <Navbar />
@@ -102,7 +117,9 @@ const SuppliersPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {loading ? <tr><td colSpan="6">Loading...</td></tr> : suppliers.map(s => (
+                  {loading ? <tr><td colSpan="6">Loading...</td></tr> : currentSuppliers.length === 0 ? (
+                    <tr><td colSpan="6" style={{ textAlign: 'center', padding: '40px' }}>No suppliers found.</td></tr>
+                  ) : currentSuppliers.map(s => (
                     <tr key={s.id}>
                       <td>{s.supplier_id}</td>
                       <td>{s.name}</td>
@@ -119,6 +136,38 @@ const SuppliersPage = () => {
                   ))}
                 </tbody>
               </table>
+            </div>
+            <div className="table-footer">
+              <div className="results-info">
+                Showing {suppliers.length > 0 ? startIndex + 1 : 0} to {endIndex} of {suppliers.length} suppliers
+              </div>
+              {totalPages > 1 && (
+                <div className="pagination">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="pagination-btn"
+                  >
+                    Previous
+                  </button>
+                  {Array.from({ length: totalPages }, (_, index) => index + 1).map(page => (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`pagination-btn ${currentPage === page ? 'active' : ''}`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="pagination-btn"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

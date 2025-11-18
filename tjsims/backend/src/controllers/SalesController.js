@@ -88,10 +88,10 @@ export class SalesController {
       const { search, date_from, date_to, delivery_type, page = 1, limit = 10 } = req.query;
       const offset = (page - 1) * limit;
 
-      let countQuery = "SELECT COUNT(*) as total FROM sales WHERE 1=1 AND (status IS NULL OR status <> 'Cancelled')";
+      let countQuery = "SELECT COUNT(*) as total FROM sales WHERE 1=1";
       let countParams = [];
 
-      let query = "SELECT * FROM sales WHERE 1=1 AND (status IS NULL OR status <> 'Cancelled')";
+      let query = "SELECT * FROM sales WHERE 1=1";
       let params = [];
 
       if (search) {

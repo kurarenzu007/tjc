@@ -107,11 +107,13 @@
   100% { opacity: 1; }
 }
 
-/* --- Adjust row padding for Product table --- */
-.product-page-content .table-section .table td {
-  padding-top: 12px;
-  padding-bottom: 12px;
-  vertical-align: middle;
+/* Table striped rows */
+.table-section .table tbody tr:nth-of-type(even) {
+  background-color: #f8f9fa !important;
+}
+
+.table-section .table tbody tr:nth-of-type(even):hover {
+  background-color: #e9ecef !important;
 }
 
 /* Product Page Specific Styles */

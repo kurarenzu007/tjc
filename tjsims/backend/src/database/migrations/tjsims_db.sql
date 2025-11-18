@@ -527,7 +527,12 @@ INSERT INTO `sales` (`id`, `sale_number`, `customer_name`, `customer_last_name`,
 (8, 'SL251015006', 'renz_test2', 'renz_test2', 'renz_test2', NULL, '12221231321', 'Cash', 'In-store', 'Partially Refunded', NULL, 51600.00, 1600.00, '2025-10-14 20:32:53', '2025-11-08 18:01:28', 'Wrong Item', 'Partially Returned', NULL, NULL),
 (9, 'SL251021001', 'asd', 'asd', 'asd', NULL, 'asd', 'Cash', 'In-store', 'Partially Refunded', NULL, 100000.00, 50000.00, '2025-10-20 16:11:48', '2025-11-08 18:00:32', 'Wrong Item', 'Partially Returned', 'asdas, Pampanga', NULL),
 (10, 'SL251103001', 'ka haha gago', 'gago', 'ka', NULL, '09009', 'Cash', 'In-store', 'Refunded', NULL, 50000.00, 50000.00, '2025-11-03 07:10:33', '2025-11-08 17:38:32', 'Not as Described', 'Returned', 'asdasdsa, Manila', '/uploads/delivery-1762266722631-277806068.png'),
-(11, 'SL251103002', 'aa aa aa', NULL, NULL, NULL, '123', 'Cash', 'In-store', 'Partially Refunded', NULL, 3200.00, 1600.00, '2025-11-03 07:14:02', '2025-11-08 17:37:48', 'Defective/Damaged', 'Partially Returned', 'asdsa, Manila', '/uploads/delivery-1762266541233-534785757.PNG');
+(11, 'SL251103002', 'aa aa aa', NULL, NULL, NULL, '123', 'Cash', 'In-store', 'Partially Refunded', NULL, 3200.00, 1600.00, '2025-11-03 07:14:02', '2025-11-08 17:37:48', 'Defective/Damaged', 'Partially Returned', 'asdsa, Manila', '/uploads/delivery-1762266541233-534785757.PNG'),
+(12, 'SL251110001', 'Juan Dela Cruz', 'Dela Cruz', 'Juan', NULL, '09171234567', 'GCash', 'Company Delivery', 'Paid', 'REF998877665', 15500.00, 0.00, '2025-11-10 01:15:22', NULL, NULL, 'Completed', 'Block 5 Lot 2, Quezon City', '/uploads/delivery-1762266888123-998877.jpg'),
+(13, 'SL251112001', 'Maria Clara', 'Clara', 'Maria', NULL, '09189876543', 'Cash', 'In-store', 'Unpaid', NULL, 8250.50, 0.00, '2025-11-12 03:30:45', NULL, NULL, 'Pending', NULL, NULL),
+(14, 'SL251114001', 'Ricardo Dalisay', 'Dalisay', 'Ricardo', 'J', '09225554444', 'GCash', 'Company Delivery', 'Paid', 'REF112233445', 3400.00, 0.00, '2025-11-14 06:45:10', NULL, NULL, 'Completed', 'Unit 404, Makati Executive Tower, Makati', NULL),
+(15, 'SL251115001', 'Leonor Rivera', 'Rivera', 'Leonor', NULL, '09998887777', 'Cash', 'In-store', 'Unpaid', NULL, 1200.00, 0.00, '2025-11-15 08:20:33', NULL, NULL, 'Cancelled', NULL, NULL),
+(16, 'SL251116001', 'Pedro Penduko', 'Penduko', 'Pedro', NULL, '09151112222', 'Cash', 'In-store', 'Partially Refunded', NULL, 75000.00, 25000.00, '2025-11-16 02:00:55', '2025-11-18 01:00:00', 'Defective/Damaged', 'Partially Returned', '789 Coconut Ave, Pasig City', '/uploads/delivery-1762266999444-112233.PNG');
 
 -- --------------------------------------------------------
 

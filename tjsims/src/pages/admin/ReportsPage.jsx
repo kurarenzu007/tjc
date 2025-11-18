@@ -54,7 +54,7 @@ const ReportsPage = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(5);
+  const [itemsPerPage] = useState(10);
   const [adminName] = useState(localStorage.getItem('username') || 'Admin User');
   const [rangeLabel, setRangeLabel] = useState('Daily');
   const [stockStatus, setStockStatus] = useState('All Status');

@@ -35,6 +35,15 @@
 .product-list { max-width: 250px; }
 .product-names { font-size: 0.9rem; line-height: 1.4; }
 
+/* Striped table rows for better readability */
+.table-section .table tbody tr:nth-child(even) {
+  background-color: #f8f9fa; /* A light gray for the stripe effect */
+}
+
+.table-section .table tbody tr:hover {
+  background-color: #e9ecef; /* A slightly darker gray for hover */
+}
+
 /* Specific Badge Colors for Orders Page */
 .payment-status-badge {
   padding: 4px 8px;

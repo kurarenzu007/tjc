@@ -30,37 +30,59 @@ export class Product {
     return result.insertId;
   }
 
-  static async findAll(filters = {}) {
+  // --- UPDATED FINDALL METHOD (THE FIX) ---
+  static async findAll(filters = {}, limit = 10, offset = 0) {
     const pool = getPool();
-    let query = 'SELECT * FROM products WHERE 1=1';
+    
+    // 1. Build the WHERE clause dynamically
+    // We separate the SQL generation so we can use it for both COUNT and SELECT
+    let whereClause = ' WHERE 1=1';
     let params = [];
 
     const { search, category, brand, status } = filters;
 
     if (search) {
-      query += ' AND (name LIKE ? OR product_id LIKE ? OR brand LIKE ?)';
+      whereClause += ' AND (name LIKE ? OR product_id LIKE ? OR brand LIKE ?)';
       params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
     if (category && category !== 'All Categories') {
-      query += ' AND category = ?';
+      whereClause += ' AND category = ?';
       params.push(category);
     }
 
     if (brand && brand !== 'All Brand') {
-      query += ' AND brand = ?';
+      whereClause += ' AND brand = ?';
       params.push(brand);
     }
 
     if (status && status !== 'All Status') {
-      query += ' AND status = ?';
+      whereClause += ' AND status = ?';
       params.push(status);
     }
 
-    query += ' ORDER BY created_at DESC';
+    // 2. Construct the DATA query (Get the 10 items)
+    // We append ORDER BY and LIMIT/OFFSET here
+    const dataQuery = `SELECT * FROM products ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+    
+    // Important: Add limit and offset to the parameters array for the data query
+    // We use parseInt to ensure they are numbers, not strings
+    const dataParams = [...params, parseInt(limit), parseInt(offset)];
 
-    const [rows] = await pool.execute(query, params);
-    return rows;
+    // 3. Construct the COUNT query (Get the total number: 13)
+    // We use the exact same whereClause but do NOT add limit/offset
+    const countQuery = `SELECT COUNT(*) as total FROM products ${whereClause}`;
+
+    // 4. Execute both queries
+    // Note: execute() prepares the statement, so precise parameter count matters
+    const [rows] = await pool.execute(dataQuery, dataParams);
+    const [countResult] = await pool.execute(countQuery, params);
+
+    // 5. Return the structure the Controller expects
+    return {
+      products: rows,
+      total: countResult[0].total
+    };
   }
 
   static async findById(id) {
@@ -163,12 +185,9 @@ export class Product {
   static async hasSerialNumbers(productId) {
     const pool = getPool();
     const [rows] = await pool.execute(
-      // CRITICAL FIX: Only block if serials are sold or defective (tied to un-reversable history).
-      // If status is 'available' or 'returned', they can be removed/re-purposed.
       'SELECT COUNT(*) as count FROM serial_numbers WHERE product_id = ? AND status IN ("sold", "defective")',
       [productId]
     );
-    // Returns true if count > 0, false otherwise
     return rows[0].count > 0;
   }
   
@@ -188,11 +207,9 @@ export class Product {
     return rows.map(row => row.name);
   }
 
-  // Seed sample data for development (optional, remove in production)
+  // Seed sample data
   static async seedSampleData() {
     const pool = getPool();
-
-    // Check if data already exists
     const [existing] = await pool.execute('SELECT COUNT(*) as count FROM products');
     if (existing[0].count > 0) return;
 

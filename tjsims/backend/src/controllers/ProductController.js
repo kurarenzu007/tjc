@@ -1,10 +1,14 @@
 import { Product } from '../models/Product.js';
 
 export class ProductController {
-  // Get all products with optional filtering
+  // Get all products with server-side pagination
   static async getAllProducts(req, res) {
     try {
-      const { search, category, brand, status, page = 1, limit = 10 } = req.query;
+      // 1. Parse Query Parameters
+      const { search, category, brand, status } = req.query;
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const offset = (page - 1) * limit;
 
       const filters = {
         search,
@@ -13,22 +17,24 @@ export class ProductController {
         status
       };
 
-      const products = await Product.findAll(filters);
+      // 2. Call the Model
+      // NOTE: Product.findAll must be updated to accept (filters, limit, offset)
+      // and return an object: { products: [...], total: 13 }
+      const result = await Product.findAll(filters, limit, offset);
 
-      // Apply pagination
-      const startIndex = (page - 1) * limit;
-      const endIndex = startIndex + parseInt(limit);
-      const paginatedProducts = products.slice(startIndex, endIndex);
+      // Handle response structure (Support if model returns object or just array)
+      const products = result.products || result || [];
+      const totalCount = result.total || products.length;
 
       res.json({
         success: true,
         data: {
-          products: paginatedProducts,
+          products: products, // This is the specific 10 items
           pagination: {
-            currentPage: parseInt(page),
-            totalPages: Math.ceil(products.length / limit),
-            totalProducts: products.length,
-            hasNextPage: endIndex < products.length,
+            currentPage: page,
+            totalPages: Math.ceil(totalCount / limit),
+            totalProducts: totalCount, // This will now show the REAL total (e.g., 13)
+            hasNextPage: (page * limit) < totalCount,
             hasPrevPage: page > 1
           }
         }
@@ -97,12 +103,13 @@ export class ProductController {
   // Update product
   static async updateProduct(req, res) {
     try {
-      const { id } = req.params; // This is the product_id (e.g., P001)
+      const { id } = req.params;
       const productData = req.body;
       
-      // --- THIS IS THE NEW/CORRECT VALIDATION BLOCK ---
+      // Convert string 'true'/'false' to boolean
       productData.requires_serial = req.body.requires_serial === 'true';
 
+      // --- VALIDATION BLOCK ---
       if (productData.requires_serial === false) {
         // Find the product in the database *before* updating
         const currentProduct = await Product.findById(id);
@@ -110,22 +117,20 @@ export class ProductController {
         // Check if the setting is being changed from true (1) to false (0)
         if (currentProduct && currentProduct.requires_serial) {
           // The user is trying to disable serial numbers.
-          // We must check if any serial numbers exist for this product.
-          const serialsExist = await Product.hasSerialNumbers(id); // <-- Call new model method
+          // Check if any serial numbers exist for this product.
+          const serialsExist = await Product.hasSerialNumbers(id); 
           
           if (serialsExist) {
-            // If serials exist, throw an error to stop the update.
             throw new Error(`Cannot disable serial numbers. This product has existing serial numbers associated with it.`);
           }
         }
       }
-      // --- END OF VALIDATION BLOCK ---
+      // --- END VALIDATION ---
 
-      // If a new file is uploaded, use its path.
+      // Image handling
       if (req.file) {
         productData.image = `/uploads/${req.file.filename}`;
       } else {
-        // Otherwise, use the image path sent from the form (or null if it's empty)
         productData.image = productData.image || null;
       }
       
@@ -144,8 +149,6 @@ export class ProductController {
       });
     } catch (error) {
       console.error('Error updating product:', error);
-      
-      // This will now catch our new error and send it to the frontend
       res.status(500).json({
         success: false,
         message: error.message || 'Failed to update product',
@@ -174,7 +177,6 @@ export class ProductController {
     } catch (error) {
       console.error('Error deleting product:', error);
       
-      // Handle specific error for product in use
       if (error.code === 'PRODUCT_IN_USE') {
         return res.status(400).json({
           success: false,

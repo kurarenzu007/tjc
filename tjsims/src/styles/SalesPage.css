@@ -57,7 +57,13 @@
   text-transform: uppercase;
 }
 .products-table tbody tr:hover {
-  background-color: #fdfdfd;
+  background-color: #f0f7ff;
+}
+.products-table tbody tr:nth-of-type(even) {
+  background-color: #f8f9fa;
+}
+.products-table tbody tr:nth-of-type(even):hover {
+  background-color: #e9ecef;
 }
 .products-table .product-name-text {
   font-weight: 600;

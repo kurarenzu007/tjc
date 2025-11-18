@@ -111,3 +111,11 @@
   padding-bottom: 1px;
   vertical-align: middle;
 }
+
+.inventory-page-content .table-section .table tbody tr:nth-of-type(even) {
+  background-color: #f8f9fa !important;
+}
+
+.inventory-page-content .table-section .table tbody tr:nth-of-type(even):hover {
+  background-color: #e9ecef !important;
+}

@@ -66,6 +66,7 @@ const OrdersPage = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [stats, setStats] = useState({ total_sales: 0, pendingOrders: 0, paidOrders: 0, total_revenue: 0 });
+  const [totalItems, setTotalItems] = useState(0);
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
   const [orderToReturn, setOrderToReturn] = useState(null);
   const [returnItems, setReturnItems] = useState([]);
@@ -90,8 +91,8 @@ const OrdersPage = () => {
   const fetchOrdersWithItems = async () => {
     try {
       setLoading(true); setError(null);
-      // Using getSales() defaults to 10 items which is fine for the table display
-      const response = await salesAPI.getSales(); 
+      // Fetch all orders by passing a high limit
+      const response = await salesAPI.getSales({ limit: 1000 }); 
       const ordersWithItems = await Promise.all(response.map(async (order) => {
           try {
             const itemsResponse = await salesAPI.getSaleItems(order.id);
@@ -131,12 +132,27 @@ const OrdersPage = () => {
     });
   }, [orders, searchQuery, selectedOrderStatus, selectedPaymentStatus]);
 
-  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  // Update totalItems when filtered orders change
+  useEffect(() => {
+    setTotalItems(filteredOrders.length);
+  }, [filteredOrders]);
+
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
   const currentOrders = filteredOrders.slice(startIndex, endIndex);
-  const totalFilteredOrders = filteredOrders.length;
-  const handlePageChange = (page) => { setCurrentPage(page); };
+  
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      document.querySelector('.table-container')?.scrollTo(0, 0);
+    }
+  };
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedOrderStatus, selectedPaymentStatus]);
   const handleViewOrder = (order) => { setSelectedOrder(order); setIsModalOpen(true); };
   const handleCloseModal = () => { setIsModalOpen(false); setSelectedOrder(null); };
 
@@ -226,7 +242,7 @@ const OrdersPage = () => {
                   </table>
                 )}
               </div>
-              <div className="table-footer"><div className="results-info">Showing {totalFilteredOrders > 0 ? startIndex + 1 : 0} to {Math.min(endIndex, totalFilteredOrders)} of {totalFilteredOrders} transactions</div>{totalPages > 1 && (<div className="pagination"><button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="pagination-btn">Previous</button>{Array.from({ length: totalPages }, (_, index) => index + 1).map(page => (<button key={page} onClick={() => handlePageChange(page)} className={`pagination-btn ${currentPage === page ? 'active' : ''}`}>{page}</button>))}<button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="pagination-btn">Next</button></div>)}</div>
+              <div className="table-footer"><div className="results-info">Showing {totalItems > 0 ? startIndex + 1 : 0} to {endIndex} of {totalItems} transactions</div>{totalPages > 1 && (<div className="pagination"><button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="pagination-btn">Previous</button>{Array.from({ length: totalPages }, (_, index) => index + 1).map(page => (<button key={page} onClick={() => handlePageChange(page)} className={`pagination-btn ${currentPage === page ? 'active' : ''}`}>{page}</button>))}<button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="pagination-btn">Next</button></div>)}</div>
             </div>
           </div>
         </main>

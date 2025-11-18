@@ -110,12 +110,17 @@ const InventoryPage = () => {
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, filteredProducts.length);
   const currentProducts = filteredProducts.slice(startIndex, endIndex);
   const totalFilteredProducts = filteredProducts.length;
 
   useEffect(() => { setCurrentPage(1); }, [searchQuery, selectedCategory, selectedStatus]);
-  const handlePageChange = (page) => { setCurrentPage(page); };
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      document.querySelector('.table-container')?.scrollTo(0, 0);
+    }
+  };
 
   const handleAddProduct = () => { setIsAddMode(true); setSelectedProduct({ name: '', brand: '', category: '', price: 0, stock: 0, supplier: '', sku: '', description: '' }); setIsModalOpen(true); };
   const handleEditProduct = (product) => { setIsAddMode(false); const existingReorderPoint = product.reorderPoint ?? product.reorder_point ?? 10; setSelectedProduct({ ...product, currentReorderPoint: existingReorderPoint, newReorderPoint: existingReorderPoint }); setIsModalOpen(true); };
@@ -389,7 +394,7 @@ const InventoryPage = () => {
               </div>
             )}
             <div className="table-footer">
-              <div className="results-info">Showing {totalFilteredProducts > 0 ? startIndex + 1 : 0} to {Math.min(endIndex, totalFilteredProducts)} of {totalFilteredProducts} products</div>
+              <div className="results-info">Showing {totalFilteredProducts > 0 ? startIndex + 1 : 0} to {endIndex} of {totalFilteredProducts} products</div>
               {totalPages > 1 && (<div className="pagination"><button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="pagination-btn">Previous</button>{Array.from({ length: totalPages }, (_, index) => index + 1).map(page => (<button key={page} onClick={() => handlePageChange(page)} className={`pagination-btn ${currentPage === page ? 'active' : ''}`}>{page}</button>))}<button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="pagination-btn">Next</button></div>)}
             </div>
           </div>

@@ -55,7 +55,6 @@
 }
 
 .admin-container {
-  max-width: 1400px;
   margin: 0 auto;
   width: 100%;
   padding: 0 15px;
@@ -97,7 +96,7 @@
 
 .navbar-nav {
   display: flex;
-  flex-direction: row; /* <-- THIS WAS THE MISSING LINE */
+  flex-direction: row; 
   align-items: center;
   flex-grow: 1;
   height: 100%;
